@@ -1,0 +1,115 @@
+{
+  "session_id": "case_1_20260709_053822",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "year_of_study": "intern",
+    "confidence_pre": "4"
+  },
+  "start_time": "2026-07-09T05:36:06.459162",
+  "end_time": "2026-07-09T05:38:20.807613",
+  "question_count": 2,
+  "questions_asked": [
+    "how long does it last",
+    "how many times in a day?"
+  ],
+  "topics_covered": [
+    "duration_pattern",
+    "timing_pattern",
+    "onset_timing"
+  ],
+  "exams_performed": [
+    "peripheral_pulses",
+    "postural_bp",
+    "cardiovascular"
+  ],
+  "investigations_ordered": [
+    "troponin_0h",
+    "exercise_ecg",
+    "ecg",
+    "troponin_3h",
+    "echo",
+    "cxr"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "cardiac blockage",
+  "diagnosis_verdict": "anchored",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.88,
+      "reason": "You asked only 2 questions (minimum recommended: 7) and covered 1 of 8 key history areas. Areas not explored: pain character, meal relationship, radiation, associated symptoms, medications, family history, relieving factors.",
+      "evidence": [
+        "pain character",
+        "meal relationship",
+        "radiation",
+        "associated symptoms",
+        "medications",
+        "family history",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 0.9,
+      "reason": "You explored 0 of 8 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 0/8 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "anchored",
+      "label": "Anchored on cardiac / heart disease",
+      "matched": "cardiac"
+    },
+    "examinations": {
+      "performed": [
+        "Cardiovascular exam"
+      ],
+      "key_done": [
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Vital signs",
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "High-sensitivity Troponin (0 h)",
+        "Exercise tolerance test",
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (3 h)",
+        "Chest X-ray"
+      ],
+      "key_done": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)"
+      ],
+      "key_missed": [
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [
+        "Exercise tolerance test"
+      ],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Ramesh presented with chest pain; what other organ systems, beyond cardiac, might cause pain in that region?",
+    "Considering his presentation, what key vital signs would you have wanted to obtain early in your assessment?",
+    "What aspects of an abdominal examination might have provided further clues for Ramesh's chest pain?",
+    "Are there any medications Ramesh might be taking that could contribute to his symptoms?"
+  ]
+}

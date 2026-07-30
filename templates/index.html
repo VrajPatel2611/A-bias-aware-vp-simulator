@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Patient Simulator — Clinical Reasoning Practice</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Site header -->
+  <header class="site-header">
+    <div class="inner">
+      <div class="logo">VP<span>Sim</span> &nbsp;·&nbsp; Clinical Reasoning</div>
+      <div style="font-size:12px; color:var(--slate-400);">DA-IICT · 2026</div>
+    </div>
+  </header>
+
+  <div class="page-wrap">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-badge">Medical Education Research Tool</div>
+      <h1>Practice Clinical History-Taking.<br>Reflect on Your Reasoning.</h1>
+      <p>
+        Interview a virtual patient, reach a diagnosis, and receive
+        immediate Socratic feedback on your reasoning process — not just
+        whether your diagnosis was correct.
+      </p>
+    </div>
+
+    <!-- How it works -->
+    <div class="how-it-works">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <strong>Select a case</strong>
+          <p>Choose from 5 clinical presentations</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <strong>Interview the patient</strong>
+          <p>Ask questions to take a thorough history</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <strong>Submit a diagnosis</strong>
+          <p>Commit to your working diagnosis</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <strong>Get reasoning feedback</strong>
+          <p>Reflect on your diagnostic process</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cases -->
+    <div class="section-label">Clinical Cases</div>
+    <div class="case-grid">
+
+      <div class="case-card">
+        <div class="case-icon">🫀</div>
+        <div class="case-body">
+          <h3>Case 1 — The Chest Pain Trap</h3>
+          <p>48-year-old male accountant. Chest pain for 3 days. Not in acute distress.</p>
+          <div class="case-meta">
+            <span class="tag">Primary care</span>
+            <span class="tag">Min. 7 questions</span>
+          </div>
+        </div>
+        <a href="/pre_case/case_1" class="btn btn-sm">Begin</a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-icon">🫁</div>
+        <div class="case-body">
+          <h3>Case 2 — Breathless and Worried</h3>
+          <p>29-year-old female executive in A&E. Progressive SOB and pleuritic chest pain for 2 days.</p>
+          <div class="case-meta">
+            <span class="tag">Acute medicine</span>
+            <span class="tag">Labs required</span>
+            <span class="tag">Min. 8 questions</span>
+          </div>
+        </div>
+        <a href="/pre_case/case_2" class="btn btn-sm">Begin</a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-icon">👴</div>
+        <div class="case-body">
+          <h3>Case 3 — The Confused Elderly Man</h3>
+          <p>74-year-old retired teacher, brought in by daughter. Acute confusion since yesterday.</p>
+          <div class="case-meta">
+            <span class="tag">Geriatrics</span>
+            <span class="tag">Min. 8 questions</span>
+          </div>
+        </div>
+        <a href="/pre_case/case_3" class="btn btn-sm">Begin</a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-icon">🩺</div>
+        <div class="case-body">
+          <h3>Case 4 — The Tired Teacher</h3>
+          <p>35-year-old primary school teacher. Persistent fatigue and weight gain for 3 months.</p>
+          <div class="case-meta">
+            <span class="tag">Endocrinology</span>
+            <span class="tag">Min. 8 questions</span>
+          </div>
+        </div>
+        <a href="/pre_case/case_4" class="btn btn-sm">Begin</a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-icon">🚨</div>
+        <div class="case-body">
+          <h3>Case 5 — The Student Who Cannot Stop Being Sick</h3>
+          <p>21-year-old student in A&E. Day of vomiting, severe abdo pain, deep rapid breathing.</p>
+          <div class="case-meta">
+            <span class="tag">Acute medicine</span>
+            <span class="tag">Labs required</span>
+            <span class="tag">Min. 8 questions</span>
+          </div>
+        </div>
+        <a href="/pre_case/case_5" class="btn btn-sm">Begin</a>
+      </div>
+
+    </div><!-- /case-grid -->
+
+  </div><!-- /page-wrap -->
+
+</body>
+</html>

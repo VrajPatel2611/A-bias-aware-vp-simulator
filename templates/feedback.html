@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultation Analysis — {{ data.case_title }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="feedback-page">
+
+  {% set dx = data.clinical_eval.diagnosis %}
+  {% set exam = data.clinical_eval.examinations %}
+  {% set inv = data.clinical_eval.investigations %}
+
+  <!-- Site header -->
+  <header class="site-header" style="position:relative; top:auto;">
+    <div class="inner">
+      <div class="logo">VP<span>Sim</span> &nbsp;·&nbsp; Feedback</div>
+      <a href="/" class="back-link">&#8592; All cases</a>
+    </div>
+  </header>
+
+  <!-- Hero (colour reflects diagnosis verdict) -->
+  <div class="feedback-hero verdict-{{ dx.verdict }}">
+    <div class="case-tag">Consultation Complete</div>
+    <h1>{{ data.case_title }}</h1>
+    <div class="diag">Your diagnosis: <strong>{{ data.diagnosis_given }}</strong></div>
+
+    <div class="verdict-pill verdict-pill-{{ dx.verdict }}">
+      {% if dx.verdict == 'correct' %}✓ Correct diagnosis
+      {% elif dx.verdict == 'partial' %}◑ On the right track
+      {% elif dx.verdict == 'anchored' %}↯ {{ dx.label }}
+      {% else %}? Worth reconsidering{% endif %}
+    </div>
+  </div>
+
+  <!-- Stat strip -->
+  <div class="stat-strip">
+    <div class="stat-item">
+      <span class="stat-value">{{ data.questions_asked }}</span>
+      <span class="stat-label">History questions</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ data.session_summary.exams_performed_count }}</span>
+      <span class="stat-label">Examinations</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ data.session_summary.investigations_ordered_count }}</span>
+      <span class="stat-label">Tests ordered</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ data.session_summary.coverage_percent }}%</span>
+      <span class="stat-label">History coverage</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="feedback-content">
+
+    <!-- 1. Reflective feedback (the headline coaching) -->
+    {% if data.feedback_messages %}
+    <div class="fb-card">
+      <div class="fb-card-header">
+        <div class="section-icon">💬</div>
+        <h2>Tutor Feedback</h2>
+      </div>
+      <div class="fb-card-body">
+        <div class="questions-list">
+          {% for msg in data.feedback_messages %}
+          <div class="question-item">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. History coverage -->
+    <div class="fb-card">
+      <div class="fb-card-header">
+        <div class="section-icon">📋</div>
+        <h2>History Coverage</h2>
+      </div>
+      <div class="fb-card-body">
+        <div class="coverage-summary">
+          <div class="coverage-pct">{{ data.session_summary.coverage_percent }}%</div>
+          <div class="coverage-details">
+            <div class="cov-label">
+              {{ data.session_summary.topics_covered_count }} of
+              {{ data.session_summary.topics_required_count }} key history areas covered
+            </div>
+            <div class="cov-bar-track">
+              <div class="cov-bar-fill
+                {% if data.session_summary.coverage_percent >= 75 %}good
+                {% elif data.session_summary.coverage_percent >= 50 %}fair{% endif %}"
+                style="width: {{ data.session_summary.coverage_percent }}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="coverage-grid">
+          {% for topic in data.topics_hit %}
+          <div class="coverage-item hit">
+            <span class="ci-icon">✓</span>
+            <span class="ci-label">{{ topic | replace('_', ' ') }}</span>
+          </div>
+          {% endfor %}
+          {% for topic in data.topics_missed %}
+          <div class="coverage-item miss">
+            <span class="ci-icon">○</span>
+            <span class="ci-label">{{ topic | replace('_', ' ') }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Examination Scorecard -->
+    <div class="fb-card">
+      <div class="fb-card-header">
+        <div class="section-icon">🩺</div>
+        <h2>Examination</h2>
+      </div>
+      <div class="fb-card-body">
+
+        <!-- Essential exams -->
+        <div class="sc-section-label">Essential for this case</div>
+        {% if not data.exam_scorecard.key_done and not data.exam_scorecard.key_missed %}
+        <p class="sc-empty">No examination data available.</p>
+        {% else %}
+        <div class="sc-list">
+          {% for lbl in data.exam_scorecard.key_done %}
+          <div class="sc-row sc-correct">
+            <span class="sc-icon">✓</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-correct">Done</span>
+          </div>
+          {% endfor %}
+          {% for lbl in data.exam_scorecard.key_missed %}
+          <div class="sc-row sc-missed">
+            <span class="sc-icon">○</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-missed">Not performed</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Other exams performed -->
+        {% if data.exam_scorecard.relevant_done or data.exam_scorecard.extra_done %}
+        <div class="sc-section-label sc-section-label-gap">Other examinations you performed</div>
+        <div class="sc-list">
+          {% for lbl in data.exam_scorecard.relevant_done %}
+          <div class="sc-row sc-neutral">
+            <span class="sc-icon">·</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-neutral">Relevant</span>
+          </div>
+          {% endfor %}
+          {% for lbl in data.exam_scorecard.extra_done %}
+          <div class="sc-row sc-extra">
+            <span class="sc-icon">·</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-extra">Not needed here</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not data.exam_scorecard.key_missed %}
+        <div class="sc-all-good">✓ All essential examinations performed.</div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- 4. Investigation Scorecard -->
+    <div class="fb-card">
+      <div class="fb-card-header">
+        <div class="section-icon">🧪</div>
+        <h2>Investigations</h2>
+      </div>
+      <div class="fb-card-body">
+
+        <!-- Essential investigations -->
+        <div class="sc-section-label">Essential for this case</div>
+        {% if not data.inv_scorecard.key_done and not data.inv_scorecard.key_missed %}
+        <p class="sc-empty">No investigation data available.</p>
+        {% else %}
+        <div class="sc-list">
+          {% for lbl in data.inv_scorecard.key_done %}
+          <div class="sc-row sc-correct">
+            <span class="sc-icon">✓</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-correct">Ordered</span>
+          </div>
+          {% endfor %}
+          {% for lbl in data.inv_scorecard.key_missed %}
+          <div class="sc-row sc-missed">
+            <span class="sc-icon">○</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-missed">Not ordered</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Other tests ordered -->
+        {% if data.inv_scorecard.reasonable_done or data.inv_scorecard.low_value_done or data.inv_scorecard.extra_done %}
+        <div class="sc-section-label sc-section-label-gap">Other tests you ordered</div>
+        <div class="sc-list">
+          {% for lbl in data.inv_scorecard.reasonable_done %}
+          <div class="sc-row sc-neutral">
+            <span class="sc-icon">·</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-neutral">Appropriate</span>
+          </div>
+          {% endfor %}
+          {% for lbl in data.inv_scorecard.low_value_done %}
+          <div class="sc-row sc-lowval">
+            <span class="sc-icon">⚠</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-lowval">Low value</span>
+          </div>
+          {% endfor %}
+          {% for lbl in data.inv_scorecard.extra_done %}
+          <div class="sc-row sc-extra">
+            <span class="sc-icon">·</span>
+            <span class="sc-label">{{ lbl }}</span>
+            <span class="sc-tag sc-tag-extra">Not needed here</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not data.inv_scorecard.key_missed %}
+        <div class="sc-all-good">✓ All essential investigations ordered.</div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- 5. Reasoning analysis -->
+    <div class="fb-card">
+      <div class="fb-card-header">
+        <div class="section-icon">🔍</div>
+        <h2>Reasoning Analysis</h2>
+      </div>
+      <div class="fb-card-body">
+        <div class="metric-list">
+          {% set a = data.biases_detected.anchoring %}
+          <div class="metric-item {% if a.detected %}flagged{% else %}clean{% endif %}">
+            <div class="metric-icon">{% if a.detected %}↓{% else %}✓{% endif %}</div>
+            <div class="metric-text">
+              <strong>Diagnostic Focus{% if a.detected %} — consider broadening{% endif %}</strong>
+              <p>{{ a.reason }}</p>
+            </div>
+          </div>
+          {% set p = data.biases_detected.premature_closure %}
+          <div class="metric-item {% if p.detected %}flagged{% else %}clean{% endif %}">
+            <div class="metric-icon">{% if p.detected %}↓{% else %}✓{% endif %}</div>
+            <div class="metric-text">
+              <strong>History Completeness{% if p.detected %} — consider strengthening{% endif %}</strong>
+              <p>{{ p.reason }}</p>
+            </div>
+          </div>
+          {% set c = data.biases_detected.confirmation_bias %}
+          <div class="metric-item {% if c.detected %}flagged{% else %}clean{% endif %}">
+            <div class="metric-icon">{% if c.detected %}↓{% else %}✓{% endif %}</div>
+            <div class="metric-text">
+              <strong>Evidence Exploration{% if c.detected %} — consider widening{% endif %}</strong>
+              <p>{{ c.reason }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="feedback-actions">
+      <a href="/start/{{ data.case_id }}" class="btn btn-outline">↺ &nbsp;Try this case again</a>
+      <a href="/" class="btn btn-ghost">← &nbsp;Choose a different case</a>
+    </div>
+
+  </div>
+</body>
+</html>

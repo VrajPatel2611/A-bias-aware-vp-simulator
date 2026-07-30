@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultation — {{ case.title }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    const CASE_MIN_QUESTIONS = {{ case.minimum_questions }};
+  </script>
+</head>
+<body class="chat-page">
+
+  <!-- Site header -->
+  <header class="site-header" style="position:relative; top:auto;">
+    <div class="inner">
+      <div class="logo">VP<span>Sim</span> &nbsp;·&nbsp; Consultation</div>
+      <a href="/" class="back-link">&#8592; Cases</a>
+    </div>
+  </header>
+
+  <!-- Case context bar -->
+  <div class="case-context">
+    <div class="case-title">{{ case.title }}</div>
+    <div class="case-desc">{{ case.patient_intro }}</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar-wrap">
+    <span class="q-count">History: <strong id="q-count-num">0</strong></span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <span class="min-hint" id="min-hint">Aim for at least {{ case.minimum_questions }}</span>
+  </div>
+
+  <!-- Scrollable encounter transcript -->
+  <div class="chat-scroll-area" id="chat-box">
+    <div class="msg patient">
+      <div class="speaker">Patient</div>
+      {{ case.opening_line }}
+    </div>
+    <div class="typing-indicator" id="typing-indicator">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+      <span>Patient is responding…</span>
+    </div>
+  </div>
+
+  <!-- Action tabs -->
+  <div class="action-tabs">
+    <button class="action-tab active" data-tab="history" onclick="switchTab('history')">
+      💬 History
+    </button>
+    <button class="action-tab" data-tab="exam" onclick="switchTab('exam')">
+      🩺 Examination
+    </button>
+    <button class="action-tab" data-tab="labs" onclick="switchTab('labs')">
+      🧪 Investigations
+    </button>
+  </div>
+
+  <!-- Tab: History -->
+  <div class="tab-panel active" id="panel-history">
+    <div class="input-row">
+      <input type="text" id="user-input"
+        placeholder="Ask the patient a question…" autocomplete="off" maxlength="300">
+      <button class="btn" onclick="sendMessage()" id="ask-btn">Ask</button>
+    </div>
+  </div>
+
+  <!-- Tab: Examination -->
+  <div class="tab-panel" id="panel-exam">
+    <div class="action-hint">Examine any system. Choose only what is clinically indicated.</div>
+    <div class="inv-panel-scroll">
+      {% for group_name, systems in grouped_examinations.items() %}
+      <div class="inv-group-label">{{ group_name }}</div>
+      <div class="action-grid inv-group-grid">
+        {% for key, ex in systems.items() %}
+        <button class="action-chip" id="exam-{{ key }}"
+          onclick="performExam('{{ key }}', this)">{{ ex.label }}</button>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Tab: Investigations -->
+  <div class="tab-panel" id="panel-labs">
+    <div class="action-hint">Full diagnostic panel — every test available. Order only what is clinically indicated.</div>
+    <div class="inv-panel-scroll">
+      {% for group_name, tests in grouped_investigations.items() %}
+      <div class="inv-group-label">{{ group_name }}</div>
+      <div class="action-grid inv-group-grid">
+        {% for key, inv in tests.items() %}
+        <button class="action-chip" id="lab-{{ key }}"
+          onclick="orderTest('{{ key }}', this)">{{ inv.label }}</button>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Conclude area -->
+  <div class="conclude-area">
+    <div class="conclude-label">Submit your working diagnosis</div>
+    <div class="conclude-row">
+      <input type="text" id="diagnosis-input"
+        placeholder="Enter your diagnosis…" autocomplete="off" maxlength="200">
+      <button class="btn" onclick="submitDiagnosis()" id="conclude-btn">
+        Submit &amp; Get Feedback
+      </button>
+    </div>
+    <div class="min-warning" id="min-warning">
+      ⚠ You have asked fewer than {{ case.minimum_questions }} history questions. A thorough
+      workup usually needs more before concluding. You may still submit — it will be
+      reflected in your feedback.
+    </div>
+  </div>
+
+  <script src="/static/chat.js"></script>
+</body>
+</html>

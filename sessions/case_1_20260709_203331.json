@@ -1,0 +1,93 @@
+{
+  "session_id": "case_1_20260709_203331",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "year_of_study": "intern",
+    "confidence_pre": "4"
+  },
+  "start_time": "2026-07-09T20:32:47.499520",
+  "end_time": "2026-07-09T20:33:30.092375",
+  "question_count": 3,
+  "questions_asked": [
+    "since when",
+    "how long dos it last",
+    "how many times in a day"
+  ],
+  "topics_covered": [
+    "duration_pattern",
+    "timing_pattern",
+    "onset_timing"
+  ],
+  "exams_performed": [],
+  "investigations_ordered": [],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "GERD",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.88,
+      "reason": "You asked only 3 questions (minimum recommended: 7) and covered 1 of 8 key history areas. Areas not explored: pain character, meal relationship, radiation, associated symptoms, medications, family history, relieving factors.",
+      "evidence": [
+        "pain character",
+        "meal relationship",
+        "radiation",
+        "associated symptoms",
+        "medications",
+        "family history",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 0/8 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "gerd"
+    },
+    "examinations": {
+      "performed": [],
+      "key_done": [],
+      "key_missed": [
+        "Vital signs",
+        "Cardiovascular exam",
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [],
+      "key_done": [],
+      "key_missed": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)",
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Excellent work identifying GERD as the likely cause of Ramesh's chest pain.",
+    "To be comprehensive, it's crucial to assess vital signs and perform a cardiovascular examination in any patient presenting with chest pain.",
+    "Given the potential for cardiac causes of chest pain, a 12-lead ECG would also be a critical initial investigation.",
+    "Even with a strong suspicion of GERD, a focused abdominal examination would help confirm your hypothesis and exclude other differential diagnoses."
+  ]
+}

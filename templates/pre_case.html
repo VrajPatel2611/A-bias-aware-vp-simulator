@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Before You Begin — {{ case.title }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Site header -->
+  <header class="site-header">
+    <div class="inner">
+      <div class="logo">VP<span>Sim</span> &nbsp;·&nbsp; Clinical Reasoning</div>
+      <a href="/" class="back-link">&#8592; All cases</a>
+    </div>
+  </header>
+
+  <div class="pre-case-wrap">
+    <div class="pre-case-card">
+
+      <!-- Patient preview -->
+      <div class="patient-preview">
+        <div class="label">Case preview</div>
+        <p>{{ case.patient_intro }}</p>
+      </div>
+
+      <h2>Before you begin</h2>
+      <p class="sub">
+        Two quick questions before your consultation. This helps us
+        understand the context for your session — it takes under a minute.
+      </p>
+
+      <form method="POST" action="/pre_case/{{ case.id }}">
+
+        <!-- Year of study -->
+        <div class="form-group">
+          <label for="year_of_study">What year of medical school are you in?</label>
+          <select id="year_of_study" name="year_of_study" required>
+            <option value="" disabled selected>Select year…</option>
+            <option value="year_1">Year 1 (pre-clinical)</option>
+            <option value="year_2">Year 2 (pre-clinical)</option>
+            <option value="year_3">Year 3 (clinical)</option>
+            <option value="year_4">Year 4 (clinical)</option>
+            <option value="year_5">Year 5 (clinical)</option>
+            <option value="year_6">Year 6 / final year</option>
+            <option value="intern">Foundation / Intern year</option>
+            <option value="resident">Resident / Registrar</option>
+          </select>
+        </div>
+
+        <!-- Confidence scale -->
+        <div class="form-group">
+          <label>
+            How confident are you in managing this type of presentation?
+          </label>
+          <div class="confidence-scale">
+            {% for i in [1, 2, 3, 4, 5] %}
+            <div class="conf-option">
+              <input type="radio" id="conf_{{ i }}" name="confidence" value="{{ i }}" required>
+              <label for="conf_{{ i }}">
+                <span class="num">{{ i }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="scale-labels">
+            <span>Not confident</span>
+            <span>Very confident</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; justify-content:center; padding: 12px;">
+          Begin Consultation &nbsp;&#8594;
+        </button>
+
+      </form>
+
+    </div><!-- /pre-case-card -->
+  </div>
+
+</body>
+</html>
