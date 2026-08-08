@@ -9,6 +9,8 @@ Uses: TOPIC_KEYWORDS dictionary for topic detection
 Returns: updated session dict stored server-side in SESSION_STORE
 """
 
+import os
+import json
 from datetime import datetime
 
 
@@ -250,6 +252,45 @@ TOPIC_KEYWORDS = {
 
 
 # ── Functions ────────────────────────────────────────────────────────
+
+def count_prior_sessions(sessions_dir, participant_id):
+    """
+    Counts how many saved session files already belong to a participant.
+
+    Used to assign a session sequence number (1st case = 1, 2nd case = 2, ...)
+    so that a participant's Case 1 (before feedback) and Case 2 (after feedback)
+    sessions can be linked for the within-subject pre/post analysis.
+
+    Matching is exact on the stored participant.participant_id field. Files that
+    cannot be read or have no participant id are skipped.
+
+    Args:
+        sessions_dir (str): Folder holding the session JSON files.
+        participant_id (str): The participant to count sessions for.
+
+    Returns:
+        int: Number of existing sessions for this participant (0 if the id is
+             blank or the folder does not exist).
+    """
+    if not participant_id:
+        return 0
+    if not os.path.isdir(sessions_dir):
+        return 0
+
+    count = 0
+    for fname in os.listdir(sessions_dir):
+        if not fname.endswith(".json"):
+            continue
+        path = os.path.join(sessions_dir, fname)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                record = json.load(f)
+        except Exception:
+            continue  # skip unreadable / malformed files
+        if record.get("participant", {}).get("participant_id", "") == participant_id:
+            count += 1
+    return count
+
 
 def create_session(case_id):
     """

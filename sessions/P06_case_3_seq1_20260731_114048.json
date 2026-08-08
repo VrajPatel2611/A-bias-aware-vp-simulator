@@ -1,0 +1,137 @@
+{
+  "session_id": "P06_case_3_seq1_20260731_114048",
+  "case_id": "case_3",
+  "case_title": "The Confused Elderly Man",
+  "correct_diagnosis": "Urinary Tract Infection (UTI) causing acute confusional state (delirium secondary to UTI in an elderly patient)",
+  "participant": {
+    "participant_id": "P06",
+    "session_sequence": 1,
+    "year_of_study": "year_3",
+    "confidence_pre": "5"
+  },
+  "start_time": "2026-07-31T11:39:01.325540",
+  "end_time": "2026-07-31T11:40:47.522186",
+  "question_count": 9,
+  "questions_asked": [
+    "Could this be a stroke — any weakness on one side?",
+    "Is his face drooping or is his speech slurred?",
+    "Should we arrange a CT head or brain scan?",
+    "Does he have dementia — has his memory been declining for months?",
+    "Any headache or signs of a brain bleed?",
+    "When did this start — was he completely normal yesterday morning?",
+    "When did this start — was he completely normal yesterday morning?",
+    "Any problems with urination — going more often or discomfort?",
+    "Any headache?"
+  ],
+  "topics_covered": [
+    "associated_symptoms",
+    "headache_character",
+    "focal_neuro_signs",
+    "urinary_symptoms",
+    "exercise_trigger",
+    "school_sport_impact",
+    "duration_pattern",
+    "timing_pattern",
+    "onset_timing",
+    "baseline_cognition",
+    "energy_time_pattern",
+    "symptom_timing_pattern",
+    "stress_assessment",
+    "weight_change_pattern"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "neuro_focal",
+    "cognitive",
+    "cranial_nerves",
+    "gait",
+    "reflexes"
+  ],
+  "investigations_ordered": [
+    "fbc"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Urinary tract infection causing delirium",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Could this be a stroke — any weakness on one side?",
+        "Should we arrange a CT head or brain scan?",
+        "Does he have dementia — has his memory been declining for months?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.5,
+      "reason": "You covered 4 of 8 key history areas before concluding. Areas not explored: fever, medications, recent illness, hydration.",
+      "evidence": [
+        "fever",
+        "medications",
+        "recent illness",
+        "hydration"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 2/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "urinary tract infection"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Hydration & skin turgor",
+        "Neurological exam (focal signs)",
+        "Cognitive / delirium assessment (4AT)"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Neurological exam (focal signs)",
+        "Cognitive / delirium assessment (4AT)"
+      ],
+      "key_missed": [
+        "Abdominal exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "Full blood count"
+      ],
+      "key_done": [
+        "Full blood count"
+      ],
+      "key_missed": [
+        "Urinalysis (dipstick)",
+        "Blood glucose (BM / capillary)",
+        "CRP",
+        "Urea & electrolytes / renal function"
+      ],
+      "low_value_ordered": [],
+      "total_key": 5
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of a urinary tract infection causing delirium is spot on, particularly given the acute onset of confusion and altered behavior in an elderly patient.",
+    "To further confirm this diagnosis and assess for potential complications, a urinalysis, including a dipstick test, would have been a crucial investigation to include.",
+    "An abdominal examination would also have been valuable to check for any tenderness or masses that could indicate an upper urinary tract infection or other abdominal pathology.",
+    "Considering the patient's age and presentation, it would also be important to rule out other potential causes of delirium, such as electrolyte imbalances or hyperglycemia, with relevant laboratory tests like urea and electrolytes or a blood glucose test."
+  ]
+}

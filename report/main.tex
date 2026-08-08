@@ -1,0 +1,551 @@
+%==============================================================================
+%  A Bias-Aware Virtual Patient Simulator
+%  B.Tech Summer Internship 2026, DAU (Dhirubhai Ambani University)
+%
+%  COMPILE: upload to https://overleaf.com, set compiler to pdfLaTeX, Recompile.
+%
+%  All results are real:
+%    Table II  : from validate_detectors.py
+%    Table III : counts from cases.py
+%    Table IV,V: from analyze_sessions.py on our 16 collected sessions
+%==============================================================================
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+
+\title{A Bias-Aware Virtual Patient Simulator with\\
+Reasoning-Process Feedback for Medical Education}
+
+\author{
+\IEEEauthorblockN{Vraj Patel}
+\IEEEauthorblockA{\textit{Roll No. 202301408} \\
+\textit{DAU (Dhirubhai Ambani University)}\\
+Gandhinagar, India}
+\and
+\IEEEauthorblockN{Yogesh Bagotia}
+\IEEEauthorblockA{\textit{Roll No. 202301114} \\
+\textit{DAU (Dhirubhai Ambani University)}\\
+Gandhinagar, India}
+\and
+\IEEEauthorblockN{Abhishek Gupta}
+\IEEEauthorblockA{\textit{Mentor} \\
+\textit{DAU (Dhirubhai Ambani University)}\\
+Gandhinagar, India}
+}
+
+\maketitle
+
+%------------------------------------------------------------------
+\begin{abstract}
+Doctors often make diagnostic mistakes because of cognitive bias, and this is a
+major cause of harm to patients. Most virtual patient (VP) simulators only check
+whether the student got the right diagnosis. They do not look at how the student
+reached it. We built a VP simulator that does look at the process. The student
+talks to an AI patient, orders examinations and tests from a fixed list of 27
+examinations and 86 investigations that is the same for every case, and then
+gives a diagnosis. Our system records every action and uses simple rules to
+detect three biases: anchoring, premature closure and confirmation bias. It then
+gives feedback about how the student reasoned instead of just telling them the
+answer. We tested the system in three ways. First, we checked the bias detectors
+on 18 test transcripts that we labelled ourselves. All three detectors caught
+every biased transcript (100\% sensitivity), with 94\% accuracy overall. This
+testing also found a bug that had made our confirmation-bias detector almost
+useless. Second, we describe the size and content of the finished system. Third,
+we ran a small pilot with 8 volunteers who did 16 consultations in total.
+Between their first and second case, average history coverage went up from
+45.3\% to 79.7\% ($p=0.036$) and the average number of questions asked went up
+from 6.5 to 9.0 ($p=0.012$). Anchoring dropped from 4 out of 8 students to 0,
+and premature closure from 7 to 2, but with only 8 people these changes were not
+statistically significant. One student got worse, and one of our measures turned
+out to be misleading; we explain both below.
+\end{abstract}
+
+\begin{IEEEkeywords}
+virtual patient simulator, clinical reasoning, cognitive bias, anchoring,
+premature closure, medical education, large language models
+\end{IEEEkeywords}
+
+%==================================================================
+\section{Introduction}
+Making a diagnosis is hard because doctors have to work with incomplete
+information. Human thinking has some built-in shortcuts that cause repeated
+errors, and these are called cognitive biases. They are a big reason for wrong
+diagnoses and avoidable harm~\cite{croskerry2003, graber2005}. Three biases come
+up again and again in diagnosis:
+
+\begin{itemize}
+  \item \textbf{Anchoring} --- getting stuck on the first idea that comes to mind.
+  \item \textbf{Premature closure} --- deciding before gathering enough
+  information.
+  \item \textbf{Confirmation bias} --- only looking for evidence that supports
+  what you already think.
+\end{itemize}
+
+Normal assessment only checks the final answer~\cite{norman2010, greengrass2026}.
+A student who guesses correctly without asking enough questions still gets marked
+correct, even though the same approach could be dangerous with a real patient.
+Studies of existing VP systems show that most of them only give this kind of
+knowledge feedback and do not check for biased reasoning~\cite{vpsurvey}.
+
+We wanted to close that gap. Our contributions are:
+
+\begin{enumerate}
+  \item A working VP simulator that hides which tests are relevant, so students
+  cannot guess the diagnosis from the menu.
+  \item A simple, rule-based way to detect three biases from what the student
+  asked and did.
+  \item Testing of those detectors on labelled transcripts, including a bug we
+  found and fixed because of that testing.
+  \item A small pilot study with 8 volunteers showing how their behaviour
+  changed after getting feedback.
+\end{enumerate}
+
+%==================================================================
+\section{Related Work}
+\textbf{Virtual patients using LLMs.}
+Recent surveys show that VP systems using large language models are growing
+quickly~\cite{vpsurvey}. They are realistic and easy to scale, but they still do
+not check the quality of the student's reasoning. In our system the LLM only
+plays the patient and writes the feedback text. All the marking is done by our
+own Python code.
+
+\textbf{Chatbots in clinical teaching.}
+Chatbot teaching tools have been tested before for clinical reasoning skill,
+confidence and student satisfaction using before/after
+designs~\cite{nursingchatbot}. We used a similar idea and asked students to rate
+their confidence before starting each case.
+
+\textbf{Cognitive bias.}
+Dual-process theory says we have a fast, automatic way of thinking (System 1)
+and a slow, careful one (System 2). The three biases we target are failures of
+the fast system~\cite{greengrass2026, norman2010}. Most earlier work is aimed at
+working doctors. We aim at students while they are still learning, and use bias
+detection as teaching feedback.
+
+\textbf{Explainable feedback.}
+Work on explainable AI argues that a system's output should be something a user
+can inspect and understand, not a black box~\cite{explainable}. This is why we
+used rules instead of a machine learning model. Every flag our system raises can
+be traced back to the exact questions the student asked or skipped.
+
+%==================================================================
+\section{System Architecture}
+The simulator is a web application. The backend is written in Python 3.11 using
+Flask, and the frontend is plain HTML, CSS and JavaScript with no framework. The
+patient's replies and the feedback text come from an LLM through a
+chat-completions API (we used Llama 3.3 70B through Groq; the provider can be
+changed in the config file). The code is split into 12 Python files, each with
+one job: \texttt{cases.py} holds the clinical content,
+\texttt{session\_tracker.py} records what the student does,
+\texttt{bias\_detector.py} has the bias rules, \texttt{clinical\_evaluator.py}
+marks the diagnosis and tests, \texttt{feedback\_generator.py} writes the
+feedback, and \texttt{app.py} handles the web routes.
+
+One design rule we followed strictly: \emph{the LLM never does any marking}. It
+only writes text. Every flag, score and verdict is calculated by our own code.
+This means the results are repeatable, and we were able to use this later to
+check that our collected data was genuine (Section~\ref{sec:pilot}).
+
+\subsection{How a session works}
+\begin{enumerate}
+  \item \textbf{Before the case.} The student enters a participant ID, their year
+  of study, and how confident they feel.
+  \item \textbf{History taking.} Every question they type is saved, the question
+  counter goes up, and we work out which clinical topics they covered
+  (Section~\ref{sec:topic}).
+  \item \textbf{Examination and tests.} Everything they click is added to a list
+  (no duplicates). The options come from the same universal menu on every case
+  (Section~\ref{sec:universal}).
+  \item \textbf{Finishing.} When the student submits a diagnosis, the session
+  goes to the bias detector and the evaluator, feedback is generated, and the
+  whole thing is saved as a JSON file.
+\end{enumerate}
+
+\subsection{Saving data and linking sessions}
+While a consultation is running, the session is kept in memory on the server. The
+browser cookie only holds an ID. When the student finishes, everything is written
+to a JSON file with 18 fields. Each file stores the participant ID and a session
+number (1 for their first case, 2 for their second), worked out by counting how
+many sessions that participant has already done. This is what lets us match a
+student's ``before'' and ``after'' sessions. These JSON files, not the web page,
+are what we actually analyse, because they keep the whole process and not just
+the final answer.
+
+%==================================================================
+\section{Clinical Case Design}
+\label{sec:cases}
+We wrote five cases. Each one has a \emph{trap}: an obvious diagnosis that is
+wrong, which a student who jumps to conclusions is likely to pick
+(Table~\ref{tab:cases}). Two of the cases cannot be solved from the history
+alone, so students have to order the right tests. Every case has 8 required
+history topics and a suggested minimum of 7--8 questions.
+
+\begin{table}[t]
+\caption{Our five cases and the trap in each one.}
+\label{tab:cases}
+\centering
+\small
+\begin{tabular}{@{}p{0.7cm}p{2.4cm}p{2.0cm}p{1.7cm}@{}}
+\toprule
+\textbf{Case} & \textbf{Presentation} & \textbf{Real diagnosis} & \textbf{Trap} \\
+\midrule
+1 & Chest pain, 48M & GERD (from NSAIDs) & Cardiac/ACS \\
+2 & Breathlessness, 29F & Pulmonary embolism & Chest infection \\
+3 & Acute confusion, 74M & UTI/delirium & Stroke/dementia \\
+4 & Fatigue, weight gain, 35F & Hypothyroidism & Depression \\
+5 & Vomiting, abdominal pain, 21F & DKA (new T1DM) & Gastroenteritis \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The same test list for every case}
+\label{sec:universal}
+If we only showed the tests that mattered for a case, students could work out the
+answer just by reading the menu. So we made one big list that is identical for
+all five cases: 27 examinations and 86 investigations. If a test matters for that
+case, the student gets the real result. If not, they get a normal result. Behind
+the scenes each case marks a few tests as \emph{key}, \emph{reasonable} or
+\emph{low value} for marking, but the student never sees these labels.
+
+%==================================================================
+\section{How We Detect Bias}
+\label{sec:bias}
+Each detector gives back a yes/no flag, a score between 0 and 1, a reason written
+in plain English, and the evidence it used.
+
+\subsection{Finding topics}
+\label{sec:topic}
+We check each question against a list of 523 keyword phrases grouped into 40
+topics. If a question contains any keyword for a topic, that topic counts as
+covered. History coverage is just how many of the case's required topics the
+student covered.
+
+\subsection{Anchoring}
+Let $q$ be the number of questions, $a$ how many mention the trap diagnosis, and
+$m$ how many mention other possibilities. We flag anchoring if either:
+\textbf{A1} $q \geq 4$ and $a/q > 0.60$, or \textbf{A2} $a \geq 3$ and $m = 0$.
+
+\subsection{Premature closure}
+Let $q_{\min}$ be the minimum questions for that case and $c$ the coverage
+fraction. We flag it if either \textbf{P1} $q < q_{\min}$, or \textbf{P2}
+$c < 0.60$.
+
+\subsection{Confirmation bias}
+Each case has a list of \emph{contradictory clues}: keywords for the evidence
+that points away from the trap. We picked these carefully so they do not share
+words with the trap keywords. If the student explored $k$ out of $K$ clues, we
+flag confirmation bias if either \textbf{C1} they diagnosed the trap and $k = 0$,
+or \textbf{C2} $q \geq 5$ and $k/K < 0.25$.
+
+\subsection{Marking the diagnosis}
+Separately from the bias detection, we mark the diagnosis as \emph{correct},
+\emph{partial}, \emph{anchored} or \emph{other}, and produce a scorecard of which
+key examinations and tests were done or skipped. Because these are separate, a
+student can be marked correct on the diagnosis and still be flagged for premature
+closure at the same time. That combination is exactly what normal marking cannot
+show.
+
+%==================================================================
+\section{Feedback}
+When the student submits their diagnosis, we build a prompt containing what they
+did, which biases were flagged, and their scorecard, and ask the LLM for
+feedback. The feedback asks reflective questions about what they missed, without
+ever using the words ``bias'', ``anchoring'' and so on, because we did not want
+to label the student. If the API is down, a backup set of rule-based messages is
+used instead, so a student always gets something useful.
+
+%==================================================================
+\section{Testing the Detectors}
+\label{sec:validation}
+\textbf{What we did.} Before trusting the detectors, we wanted to check they
+actually work. We wrote 18 test transcripts covering all five cases. Each one is
+a realistic set of questions plus a final diagnosis, and we labelled each one
+ourselves based on the behaviour it showed, not on what we knew the rules did. We
+included four kinds: clearly biased, thorough, quick but open-minded, and a
+tricky type where the student is thorough but deliberately avoids the obvious
+medical words. Then we ran all 18 through the real system and compared the
+output with our labels. The script is \texttt{validate\_detectors.py}.
+
+\textbf{Results.} Across 54 decisions the system was right 94\% of the time
+(51 out of 54). All three detectors caught every biased transcript
+(Table~\ref{tab:validation}). All three mistakes were false alarms, and all three
+happened on the two ``avoiding medical words'' transcripts, which is a direct
+result of using keyword matching (see Section~\ref{sec:limitations}).
+
+\begin{table}[t]
+\caption{Detector testing on 18 labelled transcripts (54 decisions).}
+\label{tab:validation}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Detector} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Accuracy} \\
+\midrule
+Anchoring          & 100\% & 100\% & 100\% \\
+Premature closure  & 100\% & 88\%  & 94\%  \\
+Confirmation bias  & 100\% & 82\%  & 89\%  \\
+\midrule
+\textbf{Overall}   & \multicolumn{3}{c}{94\% (51/54 decisions)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{A bug this testing found.} Our first version of the confirmation-bias
+detector only caught 14\% of the biased transcripts. It missed 6 out of 7. When
+we looked into why, we found the problem was that the contradictory clues were
+written as full sentences, and those sentences used some of the same words as the
+trap keywords. So when a student asked ``any family history of heart problems?''
+it matched the clue ``father diabetes no family cardiac heart history'', and the
+system thought the student had explored the opposing evidence when they had not.
+We rewrote all the clues as short keyword lists with no shared words, and
+sensitivity went from 14\% to 100\% without breaking the other two detectors.
+This bug was impossible to spot just by reading the code, which is why we think
+testing the detectors first was worth doing.
+
+\subsection{Size of the finished system}
+Table~\ref{tab:system} shows what we ended up building. The number of keywords
+matters because the detectors can only be as good as their word lists.
+
+\begin{table}[t]
+\caption{What is in the finished system.}
+\label{tab:system}
+\centering
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Item} & \textbf{Count} \\
+\midrule
+Clinical cases (all with traps) & 5 \\
+\quad of which need lab tests & 2 \\
+Examinations in the menu & 27 \\
+Investigations in the menu & 86 \\
+Topics / keyword phrases & 40 / 523 \\
+Trap keywords (all cases) & 133 \\
+Alternative-diagnosis keywords (all cases) & 134 \\
+Contradictory clue sets (all cases) & 30 \\
+Fields saved per session & 18 \\
+Python files & 12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==================================================================
+\section{Pilot Study}
+\label{sec:pilot}
+\subsection{What we did}
+We asked 8 volunteers (classmates from computer science and medicine, years 2 to
+5) to each do two consultations. After the first one they read their feedback,
+then they did a second case. Sessions were linked using the participant ID and
+session number. We collected 16 consultations in one session on 31 July 2026.
+This was an informal test of a teaching prototype. No real patients were
+involved and no patient data was used.
+
+\textbf{What we measured}, taken automatically from the saved files by
+\texttt{analyze\_sessions.py}: the three bias flags, history coverage, the
+fraction of key tests ordered, number of questions asked, and the diagnosis
+verdict. For the yes/no flags we used McNemar's exact test and for the numbers we
+used the Wilcoxon signed-rank test, since both are made for before/after data
+from the same people.
+
+\textbf{Checking the data was real.} Because none of our marking uses the LLM,
+we could recompute every bias flag and score from the saved questions and check
+it matched what was stored. All 16 sessions matched exactly, all had the full
+18-field format, and the question count matched the saved question list in every
+file.
+
+\subsection{Results}
+Table~\ref{tab:pilot} shows the group results and Table~\ref{tab:perpart} shows
+each student separately.
+
+\begin{table}[t]
+\caption{Before vs after feedback ($n=8$).}
+\label{tab:pilot}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Measure} & \textbf{Before} & \textbf{After} & \textbf{$p$} \\
+\midrule
+Anchoring flagged            & 4/8    & 0/8    & 0.125 \\
+Premature closure flagged    & 7/8    & 2/8    & 0.125 \\
+Confirmation bias flagged    & 5/8    & 2/8    & 0.375 \\
+History coverage (average)   & 45.3\% & 79.7\% & \textbf{0.036} \\
+Questions asked (average)    & 6.5    & 9.0    & \textbf{0.012} \\
+Key tests ordered (average)  & 41.6\% & 20.3\% & 0.123 \\
+Correct diagnoses            & 5/8    & 7/8    & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Each student separately. A/P/C = anchoring / premature closure /
+confirmation bias. Y means flagged.}
+\label{tab:perpart}
+\centering
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{ID} & \textbf{Yr} & \textbf{Before A/P/C} & \textbf{After A/P/C}
+& \textbf{Cov.\ before} & \textbf{Cov.\ after} \\
+\midrule
+P01 & 3 & Y/Y/Y & --/--/-- & 37.5\% & 100.0\% \\
+P02 & 4 & Y/Y/Y & --/--/-- & 37.5\% & 87.5\% \\
+P03 & 2 & --/Y/Y & --/--/Y & 25.0\% & 75.0\% \\
+P04 & 4 & --/--/-- & --/Y/Y & 75.0\% & 37.5\% \\
+P05 & 5 & --/Y/Y & --/--/-- & 75.0\% & 100.0\% \\
+P06 & 3 & --/Y/-- & --/--/-- & 50.0\% & 100.0\% \\
+P07 & 2 & Y/Y/-- & --/--/-- & 25.0\% & 62.5\% \\
+P08 & 3 & Y/Y/Y & --/Y/-- & 37.5\% & 75.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two results were statistically significant. History coverage went up from 45.3\%
+to 79.7\% ($p=0.036$), and the number of questions asked went up from 6.5 to 9.0
+($p=0.012$). Seven of the eight students covered more history the second time.
+All four anchoring flags cleared, and premature closure went from seven students
+down to two, but with only 8 people these did not reach significance, so we can
+only say the direction looks right.
+
+\textbf{One student got worse.} P04 was the only one who picked up more flags the
+second time (premature closure and confirmation bias) and whose coverage went
+down, from 75.0\% to 37.5\%, even though they asked more questions
+(7~$\rightarrow$~9). P04 also had the best first attempt of anyone. Our guess is
+that their second case was simply harder for them, rather than the feedback
+making things worse, but since each student only did one pair of cases we cannot
+actually tell the difference.
+
+\textbf{One of our measures is misleading.} The key-test number looks like it
+dropped a lot, from 41.6\% to 20.3\%, but this is not real. It happens because
+different cases need different numbers of key tests. Five of our eight students
+went from Case 1 (4 key tests) to Case 2 (8 key tests), so the number they are
+being divided by doubles. For example P02 ordered 3 key tests in both sessions:
+that is 3/4 = 75\% the first time and 3/8 = 38\% the second time, even though
+they did the same amount of work. So this measure cannot be compared across
+different cases and we only report it for completeness.
+
+\textbf{Confidence and accuracy.} In our sample, students who felt more confident
+before starting did better on their first case: those who rated themselves 4 or 5
+got it right 4 times out of 4, and those who rated 1 or 2 got it right 0 times
+out of 2. With only 8 students this is just an observation, not a finding.
+
+%==================================================================
+\section{Discussion}
+Our pilot fits the idea that feedback about the process changes how students
+gather information. The two things we measured most directly, how much of the
+history they covered and how many questions they asked, both went up
+significantly, and all three bias flags moved in the right direction across the
+group. The clearest change was history coverage, which makes sense, because the
+feedback specifically lists the history areas the student skipped.
+
+There are three things we have to be careful about. First, with only 8 students
+none of the yes/no results are significant, so the drop in bias flags is
+suggestive but not proven. Second, we had no control group, so we cannot separate
+the effect of the feedback from students simply getting better with practice, or
+from getting used to the interface. Everyone started with low coverage, so some
+improvement on a second try would be expected anyway. Third, one student got
+worse, which a group average on its own would have hidden.
+
+The main thing our system does that normal marking cannot is score the diagnosis
+and the reasoning separately. Five students got the right diagnosis on their
+first case while seven out of eight were flagged for premature closure at the
+same time. A normal system would have told most of those students they did well.
+
+\subsection{Limitations}
+\label{sec:limitations}
+\textbf{Study design.} We had no control group. We also did not keep the case
+pair the same for everyone: five students did Case 1 then Case 2, and the other
+three did different pairs. We did not swap the order either, so the difficulty of
+the second case is mixed up with the effect of the feedback. Our volunteers were
+classmates rather than a proper sample of medical students, and some were not
+medical students at all. The consultations were also very quick (1.8 minutes on
+average), which suggests people went through them faster than they would with a
+real patient. We did not give a questionnaire afterwards.
+
+\textbf{Measurement.} Our topic and clue detection uses keyword matching, so a
+question worded in an unusual way is not recognised. This caused all three of our
+detector mistakes and is the main limit on how accurate our measurements can be.
+The thresholds we chose (0.60, 0.60 and 0.25) are sensible but we did not tune
+them with data. We labelled the test transcripts ourselves, so having a doctor
+label them independently would be stronger. And as explained above, the key-test
+measure cannot be compared between cases.
+
+\textbf{System.} Sessions are only saved when the student finishes, so if
+someone closes the tab halfway through, that session is lost.
+
+%==================================================================
+\section{Conclusion and Future Work}
+We built a virtual patient simulator that gives feedback on how a student
+reasons instead of just whether they got the answer right. It detects anchoring,
+premature closure and confirmation bias using simple rules that can be traced
+back to the student's own questions. We tested the detectors on 18 labelled
+transcripts and got 100\% sensitivity and 94\% overall accuracy, and that testing
+also found and let us fix a bug that had made confirmation-bias detection almost
+useless. In a small pilot with 8 students and 16 consultations, history coverage
+went up from 45.3\% to 79.7\% ($p=0.036$) and questions asked went up from 6.5 to
+9.0 ($p=0.012$) after feedback, with the bias flags moving in the right direction
+but not reaching significance with this few people.
+
+What we would do next follows straight from the limitations. To actually claim
+that the feedback causes the improvement, we would need a proper study with a
+control group who get no feedback, the same pair of cases for everyone with the
+order swapped between students, and more participants. On the technical side, the
+biggest improvement would be replacing keyword matching with sentence embeddings,
+so that questions worded differently are still recognised, since that caused
+every mistake our detectors made. We would also like a doctor to label the test
+transcripts independently and to tune the thresholds using real data. After that,
+we plan to generate new cases automatically from public medical datasets so the
+case list can grow without writing each one by hand.
+
+%==================================================================
+\section*{Acknowledgment}
+We thank Abhishek Gupta for his guidance throughout this internship, the
+volunteers who took part in our pilot, and DAU (Dhirubhai Ambani University) for
+supporting the project.
+
+%==================================================================
+\begin{thebibliography}{00}
+
+\bibitem{croskerry2003}
+P.~Croskerry, ``The importance of cognitive errors in diagnosis and strategies
+to minimize them,'' \emph{Academic Medicine}, vol.~78, no.~8, pp.~775--780, 2003.
+
+\bibitem{graber2005}
+M.~L. Graber, N.~Franklin, and R.~Gordon, ``Diagnostic error in internal
+medicine,'' \emph{Archives of Internal Medicine}, vol.~165, no.~13,
+pp.~1493--1499, 2005.
+
+\bibitem{norman2010}
+G.~R. Norman and K.~W. Eva, ``Diagnostic error and clinical reasoning,''
+\emph{Medical Education}, vol.~44, no.~1, pp.~94--100, 2010.
+
+\bibitem{greengrass2026}
+C.~J. Greengrass, ``Transforming clinical reasoning---the role of AI in
+supporting human cognitive limitations,'' \emph{Frontiers in Digital Health},
+vol.~7, art.~1715440, 2026, doi:10.3389/fdgth.2025.1715440.
+
+\bibitem{vpsurvey}
+% VERIFY authors/venue/year against the source PDF before submitting.
+``A focused survey on patient simulation with large language models,'' 2025.
+
+\bibitem{nursingchatbot}
+% VERIFY authors/venue/year against the source PDF before submitting.
+``A chatbot education program for nursing students: a randomized study,''
+\emph{BMC Medical Education}, 2025.
+
+\bibitem{explainable}
+% VERIFY authors/venue/year against the source PDF before submitting.
+``Explainable clinical decision reasoning,'' 2024.
+
+\end{thebibliography}
+
+\end{document}

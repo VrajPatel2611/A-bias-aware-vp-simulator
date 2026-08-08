@@ -1,0 +1,128 @@
+{
+  "session_id": "P01_case_1_seq1_20260731_105344",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P01",
+    "session_sequence": 1,
+    "year_of_study": "year_3",
+    "confidence_pre": "3"
+  },
+  "start_time": "2026-07-31T10:52:07.965790",
+  "end_time": "2026-07-31T10:53:44.399743",
+  "question_count": 6,
+  "questions_asked": [
+    "Could this be a heart attack — any cardiac history?",
+    "Should we do an ECG and check troponin?",
+    "Any family history of myocardial infarction?",
+    "Do you get palpitations or an irregular heartbeat?",
+    "Does the chest tightness come on with exertion?",
+    "Can you describe the pain — is it burning or crushing?"
+  ],
+  "topics_covered": [
+    "fever_infection_signs",
+    "family_history",
+    "family_thyroid_history",
+    "duration_recurrence",
+    "family_atopy_history",
+    "medications",
+    "menstrual_changes",
+    "pain_character",
+    "headache_character",
+    "exercise_trigger",
+    "urinary_symptoms"
+  ],
+  "exams_performed": [
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp",
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi"
+  ],
+  "investigations_ordered": [
+    "ecg",
+    "troponin_0h"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Acute coronary syndrome",
+  "diagnosis_verdict": "anchored",
+  "biases_detected": {
+    "anchoring": {
+      "detected": true,
+      "score": 0.83,
+      "reason": "5 of your 6 questions focused on cardiac / heart disease symptoms. You asked 1 questions exploring alternative causes.",
+      "evidence": [
+        "Could this be a heart attack — any cardiac history?",
+        "Should we do an ECG and check troponin?",
+        "Any family history of myocardial infarction?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.62,
+      "reason": "You asked only 6 questions (minimum recommended: 7) and covered 3 of 8 key history areas. Areas not explored: meal relationship, radiation, associated symptoms, duration pattern, relieving factors.",
+      "evidence": [
+        "meal relationship",
+        "radiation",
+        "associated symptoms",
+        "duration pattern",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 0.83,
+      "reason": "You explored 1 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 1/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "anchored",
+      "label": "Anchored on cardiac / heart disease",
+      "matched": "coronary"
+    },
+    "examinations": {
+      "performed": [
+        "Cardiovascular exam",
+        "General inspection",
+        "Vital signs"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)"
+      ],
+      "key_done": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)"
+      ],
+      "key_missed": [
+        "High-sensitivity Troponin (3 h)",
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "You settled on a cardiac / heart disease explanation. Which other body system could fully account for this presentation?",
+    "You did not examine: Abdominal exam. How might that have changed your assessment?",
+    "You concluded without these key investigations: High-sensitivity Troponin (3 h), OGD (Gastroscopy). What were you hoping to rule in or out?",
+    "What piece of information, if you had found it, would have made you reconsider your diagnosis entirely — and did you look for it?"
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "session_id": "P05_case_4_seq2_20260731_113749",
+  "case_id": "case_4",
+  "case_title": "The Tired Teacher",
+  "correct_diagnosis": "Primary hypothyroidism (likely autoimmune — Hashimoto's thyroiditis)",
+  "participant": {
+    "participant_id": "P05",
+    "session_sequence": 2,
+    "year_of_study": "year_5",
+    "confidence_pre": "3"
+  },
+  "start_time": "2026-07-31T11:35:29.123829",
+  "end_time": "2026-07-31T11:37:48.120255",
+  "question_count": 10,
+  "questions_asked": [
+    "How is your mood — do you feel depressed or low in yourself?",
+    "Are you eating more or less — why is your weight going up?",
+    "Do you feel cold when others are comfortable?",
+    "Any hair loss or dry skin changes?",
+    "Any constipation or bowel habit changes?",
+    "Any family history of thyroid disease or levothyroxine use?",
+    "Have your periods become heavier recently?",
+    "Do you feel mentally slow or struggle to concentrate at work?",
+    "How long have you felt this tired — is it all day?",
+    "Any swelling in your neck or hoarse voice?"
+  ],
+  "topics_covered": [
+    "mood_vs_physical",
+    "meal_relationship",
+    "hydration",
+    "weight_change_pattern",
+    "weight_history",
+    "timing_pattern",
+    "onset_timing",
+    "temperature_tolerance",
+    "cold_air_trigger",
+    "baseline_cognition",
+    "recent_illness",
+    "hair_skin_changes",
+    "bowel_habits",
+    "family_history",
+    "family_thyroid_history",
+    "duration_recurrence",
+    "family_atopy_history",
+    "stress_assessment",
+    "menstrual_changes",
+    "exercise_trigger",
+    "school_sport_impact",
+    "duration_pattern",
+    "energy_time_pattern",
+    "radiation",
+    "leg_symptoms"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "neck_thyroid"
+  ],
+  "investigations_ordered": [
+    "fbc",
+    "lipids"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Primary hypothyroidism",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": []
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 5/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "hypothyroid"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Neck / thyroid exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Neck / thyroid exam"
+      ],
+      "key_missed": [
+        "Deep tendon reflexes"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "Full blood count",
+        "Lipid profile"
+      ],
+      "key_done": [
+        "Full blood count",
+        "Lipid profile"
+      ],
+      "key_missed": [
+        "Thyroid function tests (TSH + free T4)",
+        "Anti-TPO antibodies"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of primary hypothyroidism is spot on, considering Meera's symptoms of fatigue and weight gain despite no change in eating habits.",
+    "To further confirm this diagnosis, it would have been essential to assess her deep tendon reflexes, as hypothyroidism can cause delayed relaxation of reflexes.",
+    "Additionally, ordering thyroid function tests, including TSH and free T4, would have provided crucial laboratory evidence to support your diagnosis.",
+    "You also could have considered ordering Anti-TPO antibodies to investigate the possibility of an autoimmune cause, such as Hashimoto's thyroiditis."
+  ]
+}

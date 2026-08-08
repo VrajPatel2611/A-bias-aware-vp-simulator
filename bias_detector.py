@@ -220,17 +220,26 @@ def detect_confirmation_bias(session, case_config):
     diagnosis = session.get("diagnosis_submitted") or ""
     total_clues = len(contradictory_clues)
 
-    # Count how many contradictory clue topics the user asked about
+    # Count how many contradictory clue topics the user asked about.
+    #
+    # Each clue is a list of SPECIFIC disconfirming keyword phrases — terms
+    # unique to the evidence that argues AGAINST the trap diagnosis, curated to
+    # NOT overlap with the anchor vocabulary. (A legacy string clue is still
+    # accepted and split into words > 4 chars for backwards compatibility.)
+    # A clue counts as explored if any of its keywords is a substring of any
+    # question the student asked.
     clues_explored = 0
     for clue in contradictory_clues:
-        clue_lower = clue.lower()
-        # Extract words > 4 chars as significant clinical terms
-        significant_words = [w for w in clue_lower.split() if len(w) > 4]
+        if isinstance(clue, (list, tuple)):
+            keywords = [k.lower() for k in clue]
+        else:
+            keywords = [w for w in clue.lower().split() if len(w) > 4]
+
         clue_found = False
         for question in all_questions:
             q_lower = question.lower()
-            for word in significant_words:
-                if word in q_lower:
+            for kw in keywords:
+                if kw in q_lower:
                     clues_explored += 1
                     clue_found = True
                     break

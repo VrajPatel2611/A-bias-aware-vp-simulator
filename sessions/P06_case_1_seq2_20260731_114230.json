@@ -1,0 +1,129 @@
+{
+  "session_id": "P06_case_1_seq2_20260731_114230",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P06",
+    "session_sequence": 2,
+    "year_of_study": "year_3",
+    "confidence_pre": "5"
+  },
+  "start_time": "2026-07-31T11:41:15.709073",
+  "end_time": "2026-07-31T11:42:29.552657",
+  "question_count": 10,
+  "questions_asked": [
+    "Can you describe the pain — is it burning or crushing?",
+    "Is it worse after meals, spicy food or coffee?",
+    "Does it radiate to your arm, jaw or neck?",
+    "Any shortness of breath, sweating or nausea with it?",
+    "What medications do you take — any ibuprofen daily?",
+    "Does lying down make it worse — do antacids help?",
+    "Any family history of heart disease?",
+    "How long has this been going on — constant or comes and goes?",
+    "Is it related to exertion or physical activity?",
+    "Any difficulty swallowing or vomiting blood?"
+  ],
+  "topics_covered": [
+    "pain_character",
+    "urinary_symptoms",
+    "meal_relationship",
+    "relieving_factors",
+    "timing_pattern",
+    "lifestyle",
+    "radiation",
+    "focal_neuro_signs",
+    "associated_symptoms",
+    "fever",
+    "hydration",
+    "medications",
+    "family_history",
+    "family_thyroid_history",
+    "fever_infection_signs",
+    "duration_recurrence",
+    "family_atopy_history",
+    "duration_pattern",
+    "onset_timing",
+    "exercise_trigger",
+    "school_sport_impact",
+    "stress_assessment",
+    "bowel_habits"
+  ],
+  "exams_performed": [
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp",
+    "general",
+    "abdomen"
+  ],
+  "investigations_ordered": [],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "GERD",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Any family history of heart disease?",
+        "Any difficulty swallowing or vomiting blood?"
+      ]
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": []
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 5/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "gerd"
+    },
+    "examinations": {
+      "performed": [
+        "Cardiovascular exam",
+        "General inspection",
+        "Abdominal exam"
+      ],
+      "key_done": [
+        "Cardiovascular exam",
+        "Abdominal exam"
+      ],
+      "key_missed": [
+        "Vital signs"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [],
+      "key_done": [],
+      "key_missed": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)",
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of GERD is spot on, considering the patient's symptoms and relationship to meals.",
+    "Given the patient's presentation with chest pain, it's crucial to assess vital signs to evaluate for any signs of distress or instability.",
+    "An ECG would also be a vital investigation to rule out any cardiac causes of chest pain, ensuring patient safety.",
+    "Considering the patient's medication history, it would be essential to explore the potential relationship between their medications and symptoms further.",
+    "What other investigations could have helped confirm the diagnosis and ruled out other potential causes of chest pain?"
+  ]
+}

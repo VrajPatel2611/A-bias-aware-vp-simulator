@@ -1,0 +1,130 @@
+{
+  "session_id": "P08_case_1_seq1_20260731_115105",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P08",
+    "session_sequence": 1,
+    "year_of_study": "year_3",
+    "confidence_pre": "4"
+  },
+  "start_time": "2026-07-31T11:50:08.118690",
+  "end_time": "2026-07-31T11:51:04.081873",
+  "question_count": 6,
+  "questions_asked": [
+    "Could this be a heart attack — any cardiac history?",
+    "Should we do an ECG and check troponin?",
+    "Any family history of myocardial infarction?",
+    "Do you get palpitations or an irregular heartbeat?",
+    "Does the chest tightness come on with exertion?",
+    "Can you describe the pain — is it burning or crushing?"
+  ],
+  "topics_covered": [
+    "fever_infection_signs",
+    "family_history",
+    "family_thyroid_history",
+    "duration_recurrence",
+    "family_atopy_history",
+    "medications",
+    "menstrual_changes",
+    "pain_character",
+    "headache_character",
+    "exercise_trigger",
+    "urinary_symptoms"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp"
+  ],
+  "investigations_ordered": [
+    "ecg",
+    "troponin_0h",
+    "troponin_3h"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Gerd",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": true,
+      "score": 0.83,
+      "reason": "5 of your 6 questions focused on cardiac / heart disease symptoms. You asked 1 questions exploring alternative causes.",
+      "evidence": [
+        "Could this be a heart attack — any cardiac history?",
+        "Should we do an ECG and check troponin?",
+        "Any family history of myocardial infarction?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.62,
+      "reason": "You asked only 6 questions (minimum recommended: 7) and covered 3 of 8 key history areas. Areas not explored: meal relationship, radiation, associated symptoms, duration pattern, relieving factors.",
+      "evidence": [
+        "meal relationship",
+        "radiation",
+        "associated symptoms",
+        "duration pattern",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 0.83,
+      "reason": "You explored 1 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 1/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "gerd"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)"
+      ],
+      "key_done": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)"
+      ],
+      "key_missed": [
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of GERD is accurate and demonstrates a good understanding of the patient's presenting symptoms.",
+    "To further confirm this diagnosis and rule out other potential causes of chest pain, an abdominal exam would have been a valuable addition to your physical examination.",
+    "Considering the patient's symptoms and diagnosis, an OGD may also be an important investigation to consider in the future, especially if symptoms persist or worsen.",
+    "What other factors, such as meal relationships or relieving factors, could you have explored in the patient's history to further support your diagnosis?"
+  ]
+}

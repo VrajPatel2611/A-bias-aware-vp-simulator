@@ -1,0 +1,129 @@
+{
+  "session_id": "P07_case_2_seq1_20260731_114622",
+  "case_id": "case_2",
+  "case_title": "Breathless and Worried",
+  "correct_diagnosis": "Pulmonary embolism (PE) / venous thromboembolism (VTE)",
+  "participant": {
+    "participant_id": "P07",
+    "session_sequence": 1,
+    "year_of_study": "year_2",
+    "confidence_pre": "5"
+  },
+  "start_time": "2026-07-31T11:44:49.837224",
+  "end_time": "2026-07-31T11:46:22.039869",
+  "question_count": 7,
+  "questions_asked": [
+    "Do you have a chest infection with productive cough?",
+    "Any fever or feeling like you have the flu?",
+    "Could this be bronchitis — should we give antibiotics?",
+    "Any upper respiratory or throat infection symptoms?",
+    "You mentioned Dubai — did you catch a travel bug on the flight?",
+    "Is the chest pain pleuritic on deep inspiration?",
+    "How quickly has the breathlessness progressed?"
+  ],
+  "topics_covered": [
+    "associated_symptoms",
+    "fever",
+    "fever_infection_signs",
+    "exercise_trigger",
+    "school_sport_impact",
+    "visual_symptoms",
+    "travel_history",
+    "onset_timing",
+    "weight_change_pattern"
+  ],
+  "exams_performed": [
+    "respiratory",
+    "peak_flow_exam",
+    "general"
+  ],
+  "investigations_ordered": [
+    "d_dimer",
+    "ecg",
+    "ct_angiogram"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Pulmonary embolism",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": true,
+      "score": 0.71,
+      "reason": "5 of your 7 questions focused on chest infection / pneumonia / URTI symptoms. You asked 3 questions exploring alternative causes.",
+      "evidence": [
+        "Do you have a chest infection with productive cough?",
+        "Any fever or feeling like you have the flu?",
+        "Could this be bronchitis — should we give antibiotics?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.75,
+      "reason": "You asked only 7 questions (minimum recommended: 8) and covered 2 of 8 key history areas. Areas not explored: pain character, medications, leg symptoms, family history, duration pattern, relieving factors.",
+      "evidence": [
+        "pain character",
+        "medications",
+        "leg symptoms",
+        "family history",
+        "duration pattern",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 2/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "pulmonary embolism"
+    },
+    "examinations": {
+      "performed": [
+        "Respiratory exam",
+        "General inspection"
+      ],
+      "key_done": [
+        "Respiratory exam"
+      ],
+      "key_missed": [
+        "Vital signs",
+        "Cardiovascular exam",
+        "Lower limb exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "D-dimer",
+        "ECG (12-lead)"
+      ],
+      "key_done": [
+        "D-dimer",
+        "ECG (12-lead)"
+      ],
+      "key_missed": [
+        "Wells PE Score (clinical calculation)",
+        "CT Pulmonary Angiogram (CTPA)",
+        "Arterial Blood Gas (ABG) on air",
+        "Chest X-ray",
+        "Bilateral leg venous USS / Doppler",
+        "Urine pregnancy test (βhCG)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 8
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of pulmonary embolism is spot on, given the patient's symptoms of sudden onset shortness of breath and sharp chest pain that worsens with deep breathing or coughing.",
+    "To further confirm this diagnosis and assess the patient's stability, obtaining vital signs, including oxygen saturation and blood pressure, would have been crucial.",
+    "A key investigation that was missed is the Wells PE Score, which is a valuable clinical tool to estimate the probability of pulmonary embolism and guide further management.",
+    "Additionally, a lower limb exam could have provided important clues, such as signs of deep vein thrombosis, which is a common source of pulmonary embolism."
+  ]
+}

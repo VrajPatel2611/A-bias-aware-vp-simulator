@@ -1,0 +1,134 @@
+{
+  "session_id": "P05_case_2_seq1_20260731_113453",
+  "case_id": "case_2",
+  "case_title": "Breathless and Worried",
+  "correct_diagnosis": "Pulmonary embolism (PE) / venous thromboembolism (VTE)",
+  "participant": {
+    "participant_id": "P05",
+    "session_sequence": 1,
+    "year_of_study": "year_5",
+    "confidence_pre": "3"
+  },
+  "start_time": "2026-07-31T11:32:39.473312",
+  "end_time": "2026-07-31T11:34:52.978515",
+  "question_count": 6,
+  "questions_asked": [
+    "Do you have a chest infection — cough with green phlegm?",
+    "Any fever or flu-like symptoms?",
+    "Any sore throat or upper respiratory symptoms?",
+    "Did you catch a bug on the plane from Dubai?",
+    "Is the pain pleuritic — sharp and worse when you breathe in?",
+    "How many days has the breathlessness been worsening?"
+  ],
+  "topics_covered": [
+    "focal_neuro_signs",
+    "fever_infection_signs",
+    "leg_symptoms",
+    "associated_symptoms",
+    "fever",
+    "exercise_trigger",
+    "school_sport_impact",
+    "travel_history",
+    "pain_character",
+    "relieving_factors",
+    "timing_pattern",
+    "onset_timing",
+    "baseline_cognition",
+    "energy_time_pattern",
+    "symptom_timing_pattern",
+    "duration_pattern",
+    "weight_change_pattern"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "respiratory",
+    "peak_flow_exam"
+  ],
+  "investigations_ordered": [
+    "d_dimer",
+    "ct_angiogram"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Pulmonary embolism",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Do you have a chest infection — cough with green phlegm?",
+        "Any fever or flu-like symptoms?",
+        "Any sore throat or upper respiratory symptoms?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.25,
+      "reason": "You submitted a diagnosis after only 6 questions. A thorough workup typically requires at least 8.",
+      "evidence": [
+        "medications",
+        "family history"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 0.83,
+      "reason": "You explored 1 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 1/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "pulmonary embolism"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Respiratory exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Respiratory exam"
+      ],
+      "key_missed": [
+        "Cardiovascular exam",
+        "Lower limb exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "D-dimer"
+      ],
+      "key_done": [
+        "D-dimer"
+      ],
+      "key_missed": [
+        "Wells PE Score (clinical calculation)",
+        "CT Pulmonary Angiogram (CTPA)",
+        "ECG (12-lead)",
+        "Arterial Blood Gas (ABG) on air",
+        "Chest X-ray",
+        "Bilateral leg venous USS / Doppler",
+        "Urine pregnancy test (βhCG)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 8
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of pulmonary embolism is accurate and demonstrates a good understanding of the patient's presenting symptoms.",
+    "To further evaluate this patient, a cardiovascular exam would have been crucial to assess for signs of right heart strain or other cardiac complications.",
+    "A 12-lead ECG would also have been a valuable investigation to rule out other cardiac causes of chest pain and to look for signs of right heart strain.",
+    "Additionally, calculating the Wells PE Score would have helped to stratify the patient's risk and guide further management."
+  ]
+}

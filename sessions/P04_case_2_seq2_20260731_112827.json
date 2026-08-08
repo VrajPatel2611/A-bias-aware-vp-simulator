@@ -1,0 +1,145 @@
+{
+  "session_id": "P04_case_2_seq2_20260731_112827",
+  "case_id": "case_2",
+  "case_title": "Breathless and Worried",
+  "correct_diagnosis": "Pulmonary embolism (PE) / venous thromboembolism (VTE)",
+  "participant": {
+    "participant_id": "P04",
+    "session_sequence": 2,
+    "year_of_study": "year_4",
+    "confidence_pre": "4"
+  },
+  "start_time": "2026-07-31T11:25:41.914241",
+  "end_time": "2026-07-31T11:28:27.113851",
+  "question_count": 9,
+  "questions_asked": [
+    "When did the confusion start — was it sudden or gradual?",
+    "Was he completely normal a few days ago?",
+    "Has he had any fever or felt hot?",
+    "Any problems with urination — going more often or pain?",
+    "Is he drinking enough fluids?",
+    "Any falls, head injury or recent illness?",
+    "Can he move all his arms and legs normally?",
+    "Is his speech slurred or is his face drooping?",
+    "Any headache or neck stiffness?"
+  ],
+  "topics_covered": [
+    "duration_pattern",
+    "timing_pattern",
+    "onset_timing",
+    "baseline_cognition",
+    "associated_symptoms",
+    "fever",
+    "temperature_tolerance",
+    "fever_infection_signs",
+    "stress_assessment",
+    "urinary_symptoms",
+    "weight_change_pattern",
+    "meal_relationship",
+    "hydration",
+    "recent_illness",
+    "radiation",
+    "focal_neuro_signs",
+    "leg_symptoms",
+    "exercise_trigger",
+    "school_sport_impact"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "neuro_focal",
+    "cognitive",
+    "cranial_nerves",
+    "reflexes",
+    "gait",
+    "abdomen",
+    "rectal"
+  ],
+  "investigations_ordered": [
+    "u_e",
+    "fbc",
+    "crp"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Pulmonary Embolism",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Is he drinking enough fluids?"
+      ]
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.62,
+      "reason": "You covered 3 of 8 key history areas before concluding. Areas not explored: pain character, medications, travel history, family history, relieving factors.",
+      "evidence": [
+        "pain character",
+        "medications",
+        "travel history",
+        "family history",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 1.0,
+      "reason": "You explored 0 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 0/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "pulmonary embolism"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Abdominal exam"
+      ],
+      "key_done": [
+        "Vital signs"
+      ],
+      "key_missed": [
+        "Respiratory exam",
+        "Cardiovascular exam",
+        "Lower limb exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "Full blood count"
+      ],
+      "key_done": [],
+      "key_missed": [
+        "Wells PE Score (clinical calculation)",
+        "D-dimer",
+        "CT Pulmonary Angiogram (CTPA)",
+        "ECG (12-lead)",
+        "Arterial Blood Gas (ABG) on air",
+        "Chest X-ray",
+        "Bilateral leg venous USS / Doppler",
+        "Urine pregnancy test (βhCG)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 8
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of Pulmonary Embolism is correct and demonstrates a good understanding of the patient's presenting symptoms.",
+    "To further confirm this diagnosis, a key investigation that would have been valuable is the D-dimer test, as it can help assess the likelihood of a thromboembolic event.",
+    "Additionally, performing a Lower Limb exam could have provided important information on potential deep vein thrombosis, a common cause of pulmonary embolism.",
+    "A 12-lead ECG would also have been useful to rule out other cardiac causes of the patient's symptoms."
+  ]
+}

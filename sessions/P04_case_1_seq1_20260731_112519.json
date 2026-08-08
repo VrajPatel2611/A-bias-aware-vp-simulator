@@ -1,0 +1,130 @@
+{
+  "session_id": "P04_case_1_seq1_20260731_112519",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P04",
+    "session_sequence": 1,
+    "year_of_study": "year_4",
+    "confidence_pre": "4"
+  },
+  "start_time": "2026-07-31T11:24:08.278921",
+  "end_time": "2026-07-31T11:25:18.966873",
+  "question_count": 7,
+  "questions_asked": [
+    "Can you describe the character of the pain?",
+    "Should we rule out cardiac causes with an ECG?",
+    "Is it worse after eating or with spicy food?",
+    "Do antacids help at all?",
+    "Any breathlessness or sweating?",
+    "What painkillers are you taking?",
+    "Does it radiate anywhere?"
+  ],
+  "topics_covered": [
+    "pain_character",
+    "meal_relationship",
+    "relieving_factors",
+    "timing_pattern",
+    "hydration",
+    "associated_symptoms",
+    "fever",
+    "weight_change_pattern",
+    "exercise_trigger",
+    "medications",
+    "fever_infection_signs",
+    "radiation",
+    "headache_character"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp"
+  ],
+  "investigations_ordered": [
+    "fbc",
+    "ecg",
+    "troponin_0h",
+    "troponin_3h"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "GERD",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Should we rule out cardiac causes with an ECG?"
+      ]
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": [
+        "family history",
+        "duration pattern"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 3/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "gerd"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "Full blood count",
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)"
+      ],
+      "key_done": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)"
+      ],
+      "key_missed": [
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of GERD is accurate and well-supported by the patient's symptoms, such as the relationship between pain and meals.",
+    "Considering the diagnosis of GERD, an abdominal exam would have been crucial to assess for any tenderness or masses that could be contributing to the patient's symptoms.",
+    "An OGD, or gastroscopy, may also be an important investigation to consider in the future to evaluate the extent of esophageal damage or to rule out other conditions.",
+    "It's also worth noting that the patient's recent medication use could be a significant contributing factor to their symptoms."
+  ]
+}

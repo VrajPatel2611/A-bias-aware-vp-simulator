@@ -16,19 +16,18 @@ Feedback philosophy (Sprint 3):
   - Always produce something useful even if the API fails (rule-based
     fallback).
 
-Uses: google-genai (NEW library). Model: gemini-2.5-flash.
+Uses: Groq chat-completions API. Model configurable via GROQ_MODEL.
 Evaluators: medical students (clinical vocabulary is appropriate).
 """
 
 import os
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-GEMINI_MODEL = "gemini-2.5-flash"
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+LLM_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 _FEEDBACK_SYSTEM_INSTRUCTION = """You are a clinical tutor giving feedback to a \
 medical student after a virtual-patient history, examination and investigation \
@@ -72,24 +71,23 @@ def generate_feedback(bias_results, clinical_eval, session, case_config):
     )
 
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=_FEEDBACK_SYSTEM_INSTRUCTION,
-                max_output_tokens=450,
-                temperature=0.7,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
+        response = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": _FEEDBACK_SYSTEM_INSTRUCTION},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=450,
+            temperature=0.7,
         )
-        feedback_text = response.text or ""
+        feedback_text = response.choices[0].message.content or ""
         lines = [l.strip(" -•\t") for l in feedback_text.split("\n")
                  if len(l.strip()) > 10]
         if lines:
             return lines[:5]
         # empty response → fall through to rule-based
     except Exception as e:
-        print(f"Gemini feedback call failed: {e}")
+        print(f"LLM feedback call failed: {e}")
 
     return build_fallback_feedback(detected_biases, clinical_eval, case_config)
 

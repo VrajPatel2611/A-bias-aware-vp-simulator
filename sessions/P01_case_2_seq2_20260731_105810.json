@@ -1,0 +1,141 @@
+{
+  "session_id": "P01_case_2_seq2_20260731_105810",
+  "case_id": "case_2",
+  "case_title": "Breathless and Worried",
+  "correct_diagnosis": "Pulmonary embolism (PE) / venous thromboembolism (VTE)",
+  "participant": {
+    "participant_id": "P01",
+    "session_sequence": 2,
+    "year_of_study": "year_3",
+    "confidence_pre": "3"
+  },
+  "start_time": "2026-07-31T10:55:17.767123",
+  "end_time": "2026-07-31T10:58:08.243855",
+  "question_count": 8,
+  "questions_asked": [
+    "Is the chest pain sharp and worse when you breathe in deeply?",
+    "Have you coughed up any blood?",
+    "Have you been on any long flights recently?",
+    "Any swelling or pain in your calf?",
+    "Are you on the contraceptive pill?",
+    "Any personal or family history of blood clots?",
+    "How many days has the breathlessness been getting worse?",
+    "Does anything make the breathing better or worse?"
+  ],
+  "topics_covered": [
+    "pain_character",
+    "relieving_factors",
+    "timing_pattern",
+    "onset_timing",
+    "baseline_cognition",
+    "energy_time_pattern",
+    "symptom_timing_pattern",
+    "visual_symptoms",
+    "stress_assessment",
+    "recent_illness",
+    "travel_history",
+    "leg_symptoms",
+    "medications",
+    "fever_infection_signs",
+    "family_history",
+    "family_thyroid_history",
+    "exercise_trigger",
+    "duration_recurrence",
+    "family_atopy_history",
+    "school_sport_impact",
+    "associated_symptoms",
+    "duration_pattern",
+    "weight_change_pattern"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "respiratory",
+    "peak_flow_exam",
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp"
+  ],
+  "investigations_ordered": [
+    "wells_score",
+    "ecg"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Pulmonary embolism",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": []
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 4/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "pulmonary embolism"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Respiratory exam",
+        "Cardiovascular exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Respiratory exam",
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Lower limb exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "Wells PE Score (clinical calculation)",
+        "ECG (12-lead)"
+      ],
+      "key_done": [
+        "Wells PE Score (clinical calculation)",
+        "ECG (12-lead)"
+      ],
+      "key_missed": [
+        "D-dimer",
+        "CT Pulmonary Angiogram (CTPA)",
+        "Arterial Blood Gas (ABG) on air",
+        "Chest X-ray",
+        "Bilateral leg venous USS / Doppler",
+        "Urine pregnancy test (βhCG)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 8
+    }
+  },
+  "feedback_given": [
+    "That was an excellent diagnostic synthesis to consider a pulmonary embolism in this young patient.",
+    "Given her presenting complaint, a focused lower limb examination for signs of DVT would be a crucial next step.",
+    "To confirm your suspicion, what would be the definitive imaging modality you'd want to order?",
+    "Considering her acute respiratory symptoms, an ABG on air would also be important for assessing her oxygenation and acid-base status.",
+    "Also, for any woman of childbearing potential presenting to A&E, a urine βhCG is an essential screening test prior to certain investigations."
+  ]
+}

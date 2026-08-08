@@ -1,0 +1,127 @@
+{
+  "session_id": "P07_case_5_seq2_20260731_114806",
+  "case_id": "case_5",
+  "case_title": "The Student Who Cannot Stop Being Sick",
+  "correct_diagnosis": "Diabetic ketoacidosis (DKA) in new-onset type 1 diabetes mellitus",
+  "participant": {
+    "participant_id": "P07",
+    "session_sequence": 2,
+    "year_of_study": "year_2",
+    "confidence_pre": "5"
+  },
+  "start_time": "2026-07-31T11:46:49.856405",
+  "end_time": "2026-07-31T11:48:05.208264",
+  "question_count": 10,
+  "questions_asked": [
+    "How long have you been vomiting today?",
+    "Did your flatmate have a stomach bug — did hers get better quickly?",
+    "Before the vomiting started, were you very thirsty or drinking a lot?",
+    "Have you been urinating more than usual, even at night?",
+    "Any weight loss over the past few weeks?",
+    "Is your breathing fast or deep — has anyone noticed?",
+    "Any fruity or sweet smell on your breath?",
+    "Any family history of diabetes?",
+    "Where exactly is the abdominal pain?",
+    "Have you been able to keep any fluids down?"
+  ],
+  "topics_covered": [
+    "associated_symptoms",
+    "duration_pattern",
+    "timing_pattern",
+    "onset_timing",
+    "relieving_factors",
+    "meal_relationship",
+    "baseline_cognition",
+    "hydration",
+    "duration_recurrence",
+    "thirst_polyuria",
+    "weight_change_pattern",
+    "symptom_timing_pattern",
+    "urinary_symptoms",
+    "weight_history",
+    "family_history",
+    "family_thyroid_history",
+    "family_atopy_history",
+    "headache_character"
+  ],
+  "exams_performed": [
+    "general",
+    "respiratory",
+    "peak_flow_exam",
+    "abdomen"
+  ],
+  "investigations_ordered": [],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "iabetic ketoacidosis — new onset type 1 diabetes",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": [
+        "Did your flatmate have a stomach bug — did hers get better quickly?"
+      ]
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": [
+        "pain character",
+        "medications",
+        "recent illness"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 6/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "type 1 diabetes"
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Abdominal exam"
+      ],
+      "key_done": [
+        "General inspection",
+        "Abdominal exam"
+      ],
+      "key_missed": [
+        "Vital signs"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [],
+      "key_done": [],
+      "key_missed": [
+        "Blood glucose (BM / capillary)",
+        "Blood ketones (beta-hydroxybutyrate)",
+        "Arterial Blood Gas (ABG)",
+        "Urea & electrolytes (STAT)",
+        "HbA1c",
+        "Urinalysis (Dipstick)",
+        "Full blood count"
+      ],
+      "low_value_ordered": [],
+      "total_key": 7
+    }
+  },
+  "feedback_given": [
+    "Your diagnosis of diabetic ketoacidosis is spot on, particularly given the patient's symptoms of vomiting, abdominal pain, and deep breathing.",
+    "To confirm the severity of the patient's condition, it would have been crucial to assess her vital signs, including blood pressure and temperature.",
+    "Measuring blood glucose levels through a capillary sample would have also been essential to support your diagnosis and guide initial management.",
+    "Additionally, an arterial blood gas would have helped assess the patient's acid-base status and guided further treatment."
+  ]
+}

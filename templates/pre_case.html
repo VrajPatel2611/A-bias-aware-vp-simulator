@@ -27,11 +27,23 @@
 
       <h2>Before you begin</h2>
       <p class="sub">
-        Two quick questions before your consultation. This helps us
+        A few quick questions before your consultation. This helps us
         understand the context for your session — it takes under a minute.
       </p>
 
       <form method="POST" action="/pre_case/{{ case.id }}">
+
+        <!-- Participant ID -->
+        <div class="form-group">
+          <label for="participant_id">Participant ID</label>
+          <input type="text" id="participant_id" name="participant_id"
+                 placeholder="e.g. P01" required autocomplete="off"
+                 style="width:100%; padding:10px; box-sizing:border-box;">
+          <div class="scale-labels" style="justify-content:flex-start;">
+            <span>Use the <strong>same ID</strong> for every case you do, so your
+            sessions can be linked.</span>
+          </div>
+        </div>
 
         <!-- Year of study -->
         <div class="form-group">

@@ -18,9 +18,10 @@ Session storage:
   Full state lives in SESSION_STORE (in-memory dict keyed by session_id).
   This avoids cookie size limits.
 
-Gemini API:
-  Uses NEW google-genai library (not deprecated google-generativeai).
-  Retry logic handles free-tier 429 rate limits automatically.
+LLM API:
+  Uses Groq chat-completions (OpenAI-compatible) via the `groq` library.
+  Model set by GROQ_MODEL in .env (default: llama-3.3-70b-versatile).
+  Retry logic handles free-tier rate limits automatically.
 """
 
 import os
@@ -31,13 +32,12 @@ from datetime import datetime
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 
 from cases import get_all_cases, get_case, MASTER_INVESTIGATIONS, MASTER_EXAMINATIONS
 from session_tracker import (
     create_session, update_session, get_session_summary,
-    record_exam, record_investigation,
+    record_exam, record_investigation, count_prior_sessions,
 )
 from bias_detector import detect_all_biases
 from clinical_evaluator import evaluate_clinical
@@ -48,9 +48,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
 
-# Initialize Gemini client — NEW google-genai library
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-GEMINI_MODEL = "gemini-2.5-flash"
+# Initialize Groq client (OpenAI-compatible chat completions API).
+# Model is overridable via GROQ_MODEL in .env without touching code.
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+LLM_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 # ── Pre-group MASTER_INVESTIGATIONS for the chat template ─────────────
 # Built once at startup; passed to every chat.html render.
@@ -84,40 +85,47 @@ for _key, _ex in MASTER_EXAMINATIONS.items():
 SESSION_STORE = {}
 
 
-# ── Gemini helper with retry ──────────────────────────────────────────
+# ── LLM helper with retry ─────────────────────────────────────────────
 
-def _call_gemini(contents, system_instruction, max_tokens=200, temperature=0.7,
-                 max_retries=3):
+def _call_llm(messages, system_instruction, max_tokens=200, temperature=0.7,
+              max_retries=3):
     """
-    Calls Gemini with automatic retry on 429 rate-limit errors.
-    Waits 3s then 6s before giving up.
+    Calls the Groq chat-completions API with retry on transient errors.
+
+    Args:
+        messages (list): [{"role": "user"|"assistant", "content": str}, ...]
+                         conversation history, oldest first.
+        system_instruction (str): system prompt (the patient persona).
+
+    Returns:
+        str: the assistant's reply text.
+
+    Raises:
+        The last exception if all retries fail.
     """
+    payload = [{"role": "system", "content": system_instruction}] + messages
+
     last_err = None
     for attempt in range(max_retries):
         try:
-            resp = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    max_output_tokens=max_tokens,
-                    temperature=temperature,
-                    # Disable "thinking": this is roleplay, not reasoning.
-                    # Prevents the model spending the token budget on hidden
-                    # thoughts and returning empty text.
-                    thinking_config=types.ThinkingConfig(thinking_budget=0),
-                ),
+            resp = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=payload,
+                max_tokens=max_tokens,
+                temperature=temperature,
             )
-            if not (resp.text or "").strip():
+            text = (resp.choices[0].message.content or "").strip()
+            if not text:
                 raise ValueError("Empty response from model")
-            return resp
+            return text
         except Exception as e:
             last_err = e
             transient = any(s in str(e) for s in
-                            ("429", "503", "UNAVAILABLE", "Empty response"))
+                            ("429", "500", "502", "503", "over capacity",
+                             "rate limit", "Empty response"))
             if transient and attempt < max_retries - 1:
                 wait = (attempt + 1) * 2   # 2 s, 4 s
-                print(f"Gemini transient error — retrying in {wait}s "
+                print(f"LLM transient error — retrying in {wait}s "
                       f"(attempt {attempt+1}): {str(e)[:80]}")
                 time.sleep(wait)
             else:
@@ -155,8 +163,9 @@ def pre_case_post(case_id):
     session_data = create_session(case_id)
 
     pre_case_data = {
-        "year_of_study": request.form.get("year_of_study", ""),
-        "confidence":    request.form.get("confidence", ""),
+        "participant_id": request.form.get("participant_id", "").strip(),
+        "year_of_study":  request.form.get("year_of_study", ""),
+        "confidence":     request.form.get("confidence", ""),
     }
 
     SESSION_STORE[session_id] = {
@@ -227,30 +236,28 @@ def chat():
     conversation = store["conversation"]
     case        = get_case(case_id)
 
-    # Build Gemini conversation history (role must be "user" or "model")
-    gemini_contents = [
-        types.Content(
-            role="user" if msg["role"] == "user" else "model",
-            parts=[types.Part(text=msg["content"])],
-        )
+    # Build chat history in OpenAI/Groq format.
+    # Stored roles are "user"/"model"; the API expects "user"/"assistant".
+    messages = [
+        {
+            "role": "user" if msg["role"] == "user" else "assistant",
+            "content": msg["content"],
+        }
         for msg in conversation
     ]
-    gemini_contents.append(
-        types.Content(role="user", parts=[types.Part(text=user_message)])
-    )
+    messages.append({"role": "user", "content": user_message})
 
     try:
-        response = _call_gemini(
-            contents=gemini_contents,
+        patient_reply = _call_llm(
+            messages=messages,
             system_instruction=case["system_prompt"],
             max_tokens=200,
             temperature=0.7,
         )
-        patient_reply = response.text
 
     except Exception as e:
         err_str = str(e)
-        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+        if "429" in err_str or "rate limit" in err_str.lower():
             msg = ("The patient is taking a moment — please wait a few seconds "
                    "and try again.")
         else:
@@ -523,17 +530,31 @@ def _save_session_file(session_id, case_id, case, session_data,
     try:
         os.makedirs("sessions", exist_ok=True)
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        filename  = f"sessions/{case_id}_{timestamp}.json"
+
+        # ── Participant linking (for within-subject pre/post analysis) ────
+        # Sequence = how many sessions this participant has already completed,
+        # plus one. Computed BEFORE writing this file so it is not counted.
+        participant_id = (pre_case_data.get("participant_id", "") or "").strip()
+        session_sequence = count_prior_sessions("sessions", participant_id) + 1
+        # Filesystem-safe participant id for the filename (falls back to "anon").
+        safe_pid = "".join(
+            c for c in participant_id if c.isalnum() or c in "-_"
+        ) or "anon"
+
+        stem     = f"{safe_pid}_{case_id}_seq{session_sequence}_{timestamp}"
+        filename = f"sessions/{stem}.json"
 
         log = {
-            "session_id":       f"{case_id}_{timestamp}",
+            "session_id":       stem,
             "case_id":          case_id,
             "case_title":       case["title"],
             "correct_diagnosis": case["correct_diagnosis"],
             # Pre-case questionnaire data (evaluation metadata)
             "participant": {
-                "year_of_study": pre_case_data.get("year_of_study", ""),
-                "confidence_pre": pre_case_data.get("confidence", ""),
+                "participant_id":   participant_id,
+                "session_sequence": session_sequence,
+                "year_of_study":    pre_case_data.get("year_of_study", ""),
+                "confidence_pre":   pre_case_data.get("confidence", ""),
             },
             "start_time":       session_data.get("start_time"),
             "end_time":         session_data.get("end_time"),

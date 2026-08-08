@@ -1,0 +1,145 @@
+{
+  "session_id": "P03_case_2_seq2_20260731_112224",
+  "case_id": "case_2",
+  "case_title": "Breathless and Worried",
+  "correct_diagnosis": "Pulmonary embolism (PE) / venous thromboembolism (VTE)",
+  "participant": {
+    "participant_id": "P03",
+    "session_sequence": 2,
+    "year_of_study": "year_2",
+    "confidence_pre": "2"
+  },
+  "start_time": "2026-07-31T11:20:28.784756",
+  "end_time": "2026-07-31T11:22:24.088650",
+  "question_count": 9,
+  "questions_asked": [
+    "Can you describe the pain — burning or crushing?",
+    "Is it worse after meals, spicy food or coffee?",
+    "Does it radiate to your arm or jaw?",
+    "Any nausea, sweating or breathlessness with it?",
+    "What medications do you take — any ibuprofen daily?",
+    "Does lying down make it worse — do antacids help?",
+    "Any family history of heart disease?",
+    "How long has this been going on?",
+    "Is it related to exertion or physical activity?"
+  ],
+  "topics_covered": [
+    "pain_character",
+    "urinary_symptoms",
+    "meal_relationship",
+    "relieving_factors",
+    "timing_pattern",
+    "lifestyle",
+    "radiation",
+    "focal_neuro_signs",
+    "associated_symptoms",
+    "fever",
+    "hydration",
+    "weight_change_pattern",
+    "exercise_trigger",
+    "medications",
+    "family_history",
+    "family_thyroid_history",
+    "fever_infection_signs",
+    "duration_recurrence",
+    "family_atopy_history",
+    "duration_pattern",
+    "onset_timing",
+    "school_sport_impact"
+  ],
+  "exams_performed": [
+    "cardiovascular",
+    "peripheral_pulses",
+    "postural_bp",
+    "general",
+    "vitals",
+    "weight_bmi",
+    "hydration",
+    "abdomen",
+    "rectal"
+  ],
+  "investigations_ordered": [
+    "ecg",
+    "troponin_0h",
+    "troponin_3h",
+    "fbc"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "GERD / reflux, likely NSAID-related",
+  "diagnosis_verdict": "anchored",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No premature closure detected — thorough workup completed.",
+      "evidence": [
+        "travel history",
+        "leg symptoms"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 1.0,
+      "reason": "You explored 0 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 0/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "anchored",
+      "label": "Anchored on chest infection / pneumonia / URTI",
+      "matched": "flu"
+    },
+    "examinations": {
+      "performed": [
+        "Cardiovascular exam",
+        "General inspection",
+        "Vital signs",
+        "Abdominal exam"
+      ],
+      "key_done": [
+        "Vital signs",
+        "Cardiovascular exam"
+      ],
+      "key_missed": [
+        "Respiratory exam",
+        "Lower limb exam"
+      ],
+      "total_key": 4
+    },
+    "investigations": {
+      "ordered": [
+        "ECG (12-lead)",
+        "Full blood count"
+      ],
+      "key_done": [
+        "ECG (12-lead)"
+      ],
+      "key_missed": [
+        "Wells PE Score (clinical calculation)",
+        "D-dimer",
+        "CT Pulmonary Angiogram (CTPA)",
+        "Arterial Blood Gas (ABG) on air",
+        "Chest X-ray",
+        "Bilateral leg venous USS / Doppler",
+        "Urine pregnancy test (βhCG)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 8
+    }
+  },
+  "feedback_given": [
+    "What led you to focus on gastrointestinal symptoms and overlook the patient's respiratory distress and chest pain that worsens with deep breathing or coughing?",
+    "Can you think of any conditions that could cause sharp chest pain on inspiration, and how you might investigate those further?",
+    "How might a thorough respiratory examination, including lung auscultation and assessment of breathing patterns, have contributed to your diagnosis?",
+    "Would considering the patient's risk factors for venous thromboembolism have changed your approach to this case?"
+  ]
+}

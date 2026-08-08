@@ -1,0 +1,120 @@
+{
+  "session_id": "P03_case_1_seq1_20260731_111942",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P03",
+    "session_sequence": 1,
+    "year_of_study": "year_2",
+    "confidence_pre": "2"
+  },
+  "start_time": "2026-07-31T11:18:01.630454",
+  "end_time": "2026-07-31T11:19:41.041575",
+  "question_count": 5,
+  "questions_asked": [
+    "Do you have a chest infection — cough with green phlegm?",
+    "Any fever or flu-like symptoms?",
+    "Is the pain sharp when you breathe in?",
+    "Should we start antibiotics for pneumonia?",
+    "Have you tried a nebuliser or cough syrup?"
+  ],
+  "topics_covered": [
+    "focal_neuro_signs",
+    "fever_infection_signs",
+    "leg_symptoms",
+    "associated_symptoms",
+    "fever",
+    "pain_character",
+    "timing_pattern",
+    "onset_timing",
+    "baseline_cognition"
+  ],
+  "exams_performed": [
+    "general",
+    "vitals",
+    "hydration",
+    "weight_bmi",
+    "respiratory",
+    "peak_flow_exam"
+  ],
+  "investigations_ordered": [
+    "fbc",
+    "cxr"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "Community-acquired pneumonia",
+  "diagnosis_verdict": "other",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 0.75,
+      "reason": "You asked only 5 questions (minimum recommended: 7) and covered 2 of 8 key history areas. Areas not explored: meal relationship, radiation, medications, family history, duration pattern, relieving factors.",
+      "evidence": [
+        "meal relationship",
+        "radiation",
+        "medications",
+        "family history",
+        "duration pattern",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": true,
+      "score": 1.0,
+      "reason": "You explored 0 of 6 key pieces of information that could have challenged your initial assumption. Confirmation bias occurs when we seek only evidence that supports our first instinct.",
+      "evidence": [
+        "Only 0/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "other",
+      "label": "Worth reconsidering",
+      "matched": null
+    },
+    "examinations": {
+      "performed": [
+        "General inspection",
+        "Vital signs",
+        "Respiratory exam"
+      ],
+      "key_done": [
+        "Vital signs"
+      ],
+      "key_missed": [
+        "Cardiovascular exam",
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "Full blood count",
+        "Chest X-ray"
+      ],
+      "key_done": [],
+      "key_missed": [
+        "ECG (12-lead)",
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)",
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "What led you to focus on infectious symptoms and not consider other potential causes of chest pain, such as cardiac or gastrointestinal issues?",
+    "Can you think of any specific questions you could have asked about Ramesh's medication use that might have shed more light on his symptoms?",
+    "How would an examination of the cardiovascular and abdominal systems have contributed to your understanding of Ramesh's condition?",
+    "Would an ECG or troponin level have been useful in ruling out any life-threatening conditions, given Ramesh's presentation with chest pain?"
+  ]
+}
