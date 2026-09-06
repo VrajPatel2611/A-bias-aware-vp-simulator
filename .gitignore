@@ -225,3 +225,7 @@ __marimo__/
 docs/dev-notes/
 # Synthetic system-test sessions (not research data)
 sessions_dummy/
+
+# docx build tooling
+docs/design/node_modules/
+docs/design/package*.json

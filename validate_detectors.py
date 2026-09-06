@@ -36,10 +36,11 @@ Run:  python validate_detectors.py
 Output: prints a report and writes docs/detector_validation.md
 """
 
-from cases import get_case
-from session_tracker import create_session, update_session
-from bias_detector import detect_all_biases
+import sys
 
+from vpsim.domain.assessment.bias import detect_all_biases
+from vpsim.domain.content.cases import get_case
+from vpsim.domain.session import create_session, update_session
 
 # ── Labelled transcripts ──────────────────────────────────────────────
 # gold: (anchoring, premature, confirmation)  as booleans
@@ -332,7 +333,7 @@ SCENARIOS = [
 
 def run_scenario(scenario):
     """Runs one transcript through the production pipeline; returns predictions."""
-    session = create_session(scenario["case"])
+    session = create_session(scenario["case"], started_at="2026-01-01T00:00:00+00:00")
     for q in scenario["questions"]:
         update_session(session, q)
     session["exams_performed"] = scenario.get("exams", [])
@@ -351,11 +352,17 @@ def run_scenario(scenario):
 def confusion(golds, preds):
     """Returns TP, FP, FN, TN for one detector across all scenarios."""
     tp = fp = fn = tn = 0
-    for g, p in zip(golds, preds):
-        if g and p:      tp += 1
-        elif g and not p: fn += 1
-        elif not g and p: fp += 1
-        else:             tn += 1
+    # strict=True: a length mismatch between labels and predictions is a bug,
+    # not something to silently truncate — it would skew the published figure.
+    for gold, pred in zip(golds, preds, strict=True):
+        if gold and pred:
+            tp += 1
+        elif gold and not pred:
+            fn += 1
+        elif not gold and pred:
+            fp += 1
+        else:
+            tn += 1
     return tp, fp, fn, tn
 
 
@@ -432,6 +439,36 @@ def main():
         f.write(report + "\n")
     print("\nSaved: docs/detector_validation.md")
 
+    return overall_acc
+
+
+# The published figure. The paper reports 94% accuracy across all detector
+# decisions; CI fails below it so that no change can quietly degrade the
+# instrument the research claim rests on (BUILD_PLAN T-004, TECH_SPEC §9.4).
+#
+# Raising this is a decision, not a formality: it commits every future change to
+# the higher bar. Lowering it means the published figure is no longer true and
+# the paper needs correcting, not the threshold.
+MINIMUM_ACCURACY = 0.94
+
 
 if __name__ == "__main__":
-    main()
+    accuracy = main()
+
+    if accuracy is None:
+        print("\nERROR: validation produced no accuracy figure.", file=sys.stderr)
+        raise SystemExit(2)
+
+    if accuracy + 1e-9 < MINIMUM_ACCURACY:
+        print(
+            f"\nFAIL: detector accuracy {accuracy*100:.1f}% is below the "
+            f"required {MINIMUM_ACCURACY*100:.0f}%.\n"
+            f"      The published research claim depends on this figure. Do not\n"
+            f"      lower the threshold to make this pass — investigate what\n"
+            f"      changed. See CLAUDE.md and docs/spec/TEST_STRATEGY.md §6.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
+    print(f"\nPASS: detector accuracy {accuracy*100:.1f}% "
+          f"meets the required {MINIMUM_ACCURACY*100:.0f}%.")

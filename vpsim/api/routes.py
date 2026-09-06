@@ -1,166 +1,92 @@
 """
-app.py
-------
-Main Flask application. All URL routes for the web app.
+HTTP routes.
 
-Routes:
-  GET  /                      → case selection page
-  GET  /pre_case/<case_id>    → pre-consultation questionnaire
-  POST /pre_case/<case_id>    → save pre-case data, redirect to chat
-  GET  /start/<case_id>       → begin consultation (also called from pre_case POST)
-  POST /chat                  → user sends message, get patient reply
-  POST /conclude              → user submits diagnosis, runs bias detection
-  GET  /feedback              → render dedicated feedback page
-  POST /save_session          → thin wrapper (auto-saved inside /conclude)
+The web layer: parses requests, calls the domain, renders responses. It holds no
+business logic of its own — anything that decides something belongs in
+vpsim.domain (ADR-0009).
 
-Session storage:
-  Flask session cookie holds only session_id.
-  Full state lives in SESSION_STORE (in-memory dict keyed by session_id).
-  This avoids cookie size limits.
-
-LLM API:
-  Uses Groq chat-completions (OpenAI-compatible) via the `groq` library.
-  Model set by GROQ_MODEL in .env (default: llama-3.3-70b-versatile).
-  Retry logic handles free-tier rate limits automatically.
+NOTE (BUILD_PLAN T-030): these server-rendered routes are the prototype. They are
+replaced by a JSON API under /v1 once the Next.js client exists (ADR-0006). The
+admin console keeps server rendering.
 """
 
-import os
-import json
-import time
 import uuid
-from datetime import datetime
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from dotenv import load_dotenv
-from groq import Groq
-
-from cases import get_all_cases, get_case, MASTER_INVESTIGATIONS, MASTER_EXAMINATIONS
-from session_tracker import (
-    create_session, update_session, get_session_summary,
-    record_exam, record_investigation, count_prior_sessions,
+from flask import (
+    Blueprint,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
 )
-from bias_detector import detect_all_biases
-from clinical_evaluator import evaluate_clinical
-from feedback_generator import generate_feedback
 
-load_dotenv()
+from vpsim.domain.assessment.bias import detect_all_biases
+from vpsim.domain.assessment.clinical import evaluate_clinical
+from vpsim.domain.content.cases import (
+    MASTER_EXAMINATIONS,
+    MASTER_INVESTIGATIONS,
+    get_all_cases,
+    get_case,
+)
+from vpsim.domain.session import (
+    create_session,
+    get_session_summary,
+    record_exam,
+    record_investigation,
+    update_session,
+)
+from vpsim.infra.clock import utc_now_iso
+from vpsim.infra.feedback import generate_feedback
+from vpsim.infra.llm.gateway import call_llm
+from vpsim.infra.session_store import SESSION_STORE
+from vpsim.infra.storage import save_session_file
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
-
-# Initialize Groq client (OpenAI-compatible chat completions API).
-# Model is overridable via GROQ_MODEL in .env without touching code.
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-LLM_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-
-# ── Pre-group MASTER_INVESTIGATIONS for the chat template ─────────────
-# Built once at startup; passed to every chat.html render.
-# Dict insertion order (Python 3.7+) preserves the group order
-# declared in MASTER_INVESTIGATIONS / MASTER_EXAMINATIONS.
-_GROUPED_INVESTIGATIONS: dict = {}
-for _key, _inv in MASTER_INVESTIGATIONS.items():
-    _g = _inv["group"]
-    if _g not in _GROUPED_INVESTIGATIONS:
-        _GROUPED_INVESTIGATIONS[_g] = {}
-    _GROUPED_INVESTIGATIONS[_g][_key] = _inv
-
-_GROUPED_EXAMINATIONS: dict = {}
-for _key, _ex in MASTER_EXAMINATIONS.items():
-    _g = _ex["group"]
-    if _g not in _GROUPED_EXAMINATIONS:
-        _GROUPED_EXAMINATIONS[_g] = {}
-    _GROUPED_EXAMINATIONS[_g][_key] = _ex
+bp = Blueprint("web", __name__)
 
 
-# ── Server-side session store ─────────────────────────────────────────
-# Format:
-# {
-#   session_id: {
-#     "session_data":  {...},      # create_session output
-#     "conversation":  [...],      # Gemini history
-#     "pre_case_data": {...},      # pre-case form answers
-#     "feedback_data": {...}       # /conclude output (for /feedback page)
-#   }
-# }
-SESSION_STORE = {}
+# ── Menus, grouped once at import ─────────────────────────────────────
+# Insertion order (Python 3.7+) preserves the group order declared in
+# MASTER_INVESTIGATIONS / MASTER_EXAMINATIONS.
+
+def _group_by(master: dict) -> dict:
+    grouped: dict = {}
+    for key, item in master.items():
+        grouped.setdefault(item["group"], {})[key] = item
+    return grouped
 
 
-# ── LLM helper with retry ─────────────────────────────────────────────
-
-def _call_llm(messages, system_instruction, max_tokens=200, temperature=0.7,
-              max_retries=3):
-    """
-    Calls the Groq chat-completions API with retry on transient errors.
-
-    Args:
-        messages (list): [{"role": "user"|"assistant", "content": str}, ...]
-                         conversation history, oldest first.
-        system_instruction (str): system prompt (the patient persona).
-
-    Returns:
-        str: the assistant's reply text.
-
-    Raises:
-        The last exception if all retries fail.
-    """
-    payload = [{"role": "system", "content": system_instruction}] + messages
-
-    last_err = None
-    for attempt in range(max_retries):
-        try:
-            resp = client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=payload,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
-            text = (resp.choices[0].message.content or "").strip()
-            if not text:
-                raise ValueError("Empty response from model")
-            return text
-        except Exception as e:
-            last_err = e
-            transient = any(s in str(e) for s in
-                            ("429", "500", "502", "503", "over capacity",
-                             "rate limit", "Empty response"))
-            if transient and attempt < max_retries - 1:
-                wait = (attempt + 1) * 2   # 2 s, 4 s
-                print(f"LLM transient error — retrying in {wait}s "
-                      f"(attempt {attempt+1}): {str(e)[:80]}")
-                time.sleep(wait)
-            else:
-                raise
-    raise last_err
+_GROUPED_INVESTIGATIONS = _group_by(MASTER_INVESTIGATIONS)
+_GROUPED_EXAMINATIONS = _group_by(MASTER_EXAMINATIONS)
 
 
-# ── Routes ────────────────────────────────────────────────────────────
-
-@app.route("/")
+@bp.route("/")
 def index():
     """Home page — case selection."""
     cases = get_all_cases()
     return render_template("index.html", cases=cases)
 
 
-@app.route("/pre_case/<case_id>", methods=["GET"])
+@bp.route("/pre_case/<case_id>", methods=["GET"])
 def pre_case_get(case_id):
     """Pre-consultation questionnaire page."""
     case = get_case(case_id)
     if not case:
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
     return render_template("pre_case.html", case=case)
 
 
-@app.route("/pre_case/<case_id>", methods=["POST"])
+@bp.route("/pre_case/<case_id>", methods=["POST"])
 def pre_case_post(case_id):
     """Save pre-case form data, then redirect into the consultation."""
     case = get_case(case_id)
     if not case:
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
 
     # Create server-side session now (so pre_case data is associated with it)
     session_id = str(uuid.uuid4())
-    session_data = create_session(case_id)
+    session_data = create_session(case_id, started_at=utc_now_iso())
 
     pre_case_data = {
         "participant_id": request.form.get("participant_id", "").strip(),
@@ -183,7 +109,7 @@ def pre_case_post(case_id):
                            grouped_examinations=_GROUPED_EXAMINATIONS)
 
 
-@app.route("/start/<case_id>")
+@bp.route("/start/<case_id>")
 def start_case(case_id):
     """
     Direct start (bypasses pre-case form).
@@ -194,7 +120,7 @@ def start_case(case_id):
         return "Case not found.", 404
 
     session_id = str(uuid.uuid4())
-    session_data = create_session(case_id)
+    session_data = create_session(case_id, started_at=utc_now_iso())
 
     SESSION_STORE[session_id] = {
         "session_data":  session_data,
@@ -211,7 +137,7 @@ def start_case(case_id):
                            grouped_examinations=_GROUPED_EXAMINATIONS)
 
 
-@app.route("/chat", methods=["POST"])
+@bp.route("/chat", methods=["POST"])
 def chat():
     """
     Receives a user question and returns the virtual patient's reply.
@@ -248,7 +174,7 @@ def chat():
     messages.append({"role": "user", "content": user_message})
 
     try:
-        patient_reply = _call_llm(
+        patient_reply = call_llm(
             messages=messages,
             system_instruction=case["system_prompt"],
             max_tokens=200,
@@ -275,7 +201,7 @@ def chat():
     })
 
 
-@app.route("/examine", methods=["POST"])
+@bp.route("/examine", methods=["POST"])
 def examine():
     """
     Performs an examination from the universal MASTER_EXAMINATIONS list.
@@ -317,7 +243,7 @@ def examine():
     return jsonify({"label": label, "finding": finding})
 
 
-@app.route("/investigate", methods=["POST"])
+@bp.route("/investigate", methods=["POST"])
 def investigate():
     """
     Orders an investigation from the universal MASTER_INVESTIGATIONS list.
@@ -359,7 +285,7 @@ def investigate():
     return jsonify({"label": label, "result": result})
 
 
-@app.route("/conclude", methods=["POST"])
+@bp.route("/conclude", methods=["POST"])
 def conclude():
     """
     Receives the student's final diagnosis.
@@ -386,7 +312,7 @@ def conclude():
 
     # Record diagnosis and end time
     session_data["diagnosis_submitted"] = diagnosis
-    session_data["end_time"] = datetime.utcnow().isoformat()
+    session_data["end_time"] = utc_now_iso()
 
     # Run bias detection (cognitive reasoning)
     bias_results = detect_all_biases(session_data, case)
@@ -485,7 +411,7 @@ def conclude():
     store["feedback_data"] = feedback_data
 
     # Save research data JSON
-    _save_session_file(
+    save_session_file(
         session_id, case_id, case, session_data,
         store.get("pre_case_data", {}),
         bias_results, clinical_eval, feedback_messages
@@ -494,93 +420,24 @@ def conclude():
     return jsonify({"status": "ok"})
 
 
-@app.route("/feedback")
+@bp.route("/feedback")
 def feedback():
     """
     Renders the dedicated feedback page from stored session data.
     """
     session_id = session.get("session_id")
     if not session_id or session_id not in SESSION_STORE:
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
 
     store = SESSION_STORE[session_id]
     feedback_data = store.get("feedback_data")
     if not feedback_data:
-        return redirect(url_for("index"))
+        return redirect(url_for(".index"))
 
     return render_template("feedback.html", data=feedback_data)
 
 
-@app.route("/save_session", methods=["POST"])
+@bp.route("/save_session", methods=["POST"])
 def save_session_route():
     """Thin wrapper — sessions are saved automatically inside /conclude."""
     return jsonify({"status": "Sessions are saved automatically on /conclude."})
-
-
-# ── Helpers ───────────────────────────────────────────────────────────
-
-def _save_session_file(session_id, case_id, case, session_data,
-                       pre_case_data, bias_results, clinical_eval,
-                       feedback_messages):
-    """
-    Saves completed session as JSON in sessions/ folder.
-    Includes pre-case questionnaire + clinical evaluation for analysis.
-    Silently skips if folder is not writable.
-    """
-    try:
-        os.makedirs("sessions", exist_ok=True)
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-
-        # ── Participant linking (for within-subject pre/post analysis) ────
-        # Sequence = how many sessions this participant has already completed,
-        # plus one. Computed BEFORE writing this file so it is not counted.
-        participant_id = (pre_case_data.get("participant_id", "") or "").strip()
-        session_sequence = count_prior_sessions("sessions", participant_id) + 1
-        # Filesystem-safe participant id for the filename (falls back to "anon").
-        safe_pid = "".join(
-            c for c in participant_id if c.isalnum() or c in "-_"
-        ) or "anon"
-
-        stem     = f"{safe_pid}_{case_id}_seq{session_sequence}_{timestamp}"
-        filename = f"sessions/{stem}.json"
-
-        log = {
-            "session_id":       stem,
-            "case_id":          case_id,
-            "case_title":       case["title"],
-            "correct_diagnosis": case["correct_diagnosis"],
-            # Pre-case questionnaire data (evaluation metadata)
-            "participant": {
-                "participant_id":   participant_id,
-                "session_sequence": session_sequence,
-                "year_of_study":    pre_case_data.get("year_of_study", ""),
-                "confidence_pre":   pre_case_data.get("confidence", ""),
-            },
-            "start_time":       session_data.get("start_time"),
-            "end_time":         session_data.get("end_time"),
-            "question_count":   session_data["question_count"],
-            "questions_asked":  session_data["questions_asked"],
-            "topics_covered":   session_data["topics_covered"],
-            "exams_performed":  session_data.get("exams_performed", []),
-            "investigations_ordered": session_data.get("investigations_ordered", []),
-            "early_diagnosis":  session_data.get("early_diagnosis"),
-            "diagnosis_submitted": session_data["diagnosis_submitted"],
-            "diagnosis_verdict": clinical_eval["diagnosis"]["verdict"],
-            "biases_detected":  bias_results,
-            "clinical_eval":    clinical_eval,
-            "feedback_given":   feedback_messages,
-        }
-
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(log, f, indent=2, ensure_ascii=False)
-
-        print(f"Session saved: {filename}")
-
-    except Exception as e:
-        print(f"Warning: Could not save session file: {e}")
-
-
-# ── Entry point ───────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)

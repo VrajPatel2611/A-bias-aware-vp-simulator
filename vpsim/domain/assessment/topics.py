@@ -1,18 +1,15 @@
 """
-session_tracker.py
-------------------
-Tracks everything the user does during one consultation session.
-Records: questions asked, topics covered, question count, diagnosis.
+Topic extraction.
 
-Called by: app.py on every POST /chat request
-Uses: TOPIC_KEYWORDS dictionary for topic detection
-Returns: updated session dict stored server-side in SESSION_STORE
+Maps a learner's free-text question onto named clinical topic categories by
+case-insensitive substring matching against a curated phrase lexicon.
+
+Pure — no I/O, no clock, no randomness. This is the input to history-coverage
+scoring and, indirectly, to the premature-closure detector.
+
+Known limitation: lexical matching misses paraphrase. Every error in detector
+validation traced here. See ADR-0013 for the embedding upgrade.
 """
-
-import os
-import json
-from datetime import datetime
-
 
 # ── Topic keyword lookup table ──────────────────────────────────────
 # Maps topic category names to lists of trigger words.
@@ -251,130 +248,7 @@ TOPIC_KEYWORDS = {
 }
 
 
-# ── Functions ────────────────────────────────────────────────────────
-
-def count_prior_sessions(sessions_dir, participant_id):
-    """
-    Counts how many saved session files already belong to a participant.
-
-    Used to assign a session sequence number (1st case = 1, 2nd case = 2, ...)
-    so that a participant's Case 1 (before feedback) and Case 2 (after feedback)
-    sessions can be linked for the within-subject pre/post analysis.
-
-    Matching is exact on the stored participant.participant_id field. Files that
-    cannot be read or have no participant id are skipped.
-
-    Args:
-        sessions_dir (str): Folder holding the session JSON files.
-        participant_id (str): The participant to count sessions for.
-
-    Returns:
-        int: Number of existing sessions for this participant (0 if the id is
-             blank or the folder does not exist).
-    """
-    if not participant_id:
-        return 0
-    if not os.path.isdir(sessions_dir):
-        return 0
-
-    count = 0
-    for fname in os.listdir(sessions_dir):
-        if not fname.endswith(".json"):
-            continue
-        path = os.path.join(sessions_dir, fname)
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                record = json.load(f)
-        except Exception:
-            continue  # skip unreadable / malformed files
-        if record.get("participant", {}).get("participant_id", "") == participant_id:
-            count += 1
-    return count
-
-
-def create_session(case_id):
-    """
-    Creates a fresh session dictionary for a new consultation.
-    Called in app.py when user starts a new case via /start/<case_id>.
-
-    Args:
-        case_id (str): e.g. "case_1"
-
-    Returns:
-        dict: Empty session with all tracking fields initialized.
-    """
-    return {
-        "case_id": case_id,
-        "question_count": 0,
-        "questions_asked": [],      # list of all user message strings
-        "topics_covered": [],       # list of topic names detected so far
-        "exams_performed": [],      # list of examination keys performed
-        "investigations_ordered": [],  # list of investigation keys ordered
-        "early_diagnosis": None,    # if user mentions diagnosis mid-consult
-        "diagnosis_submitted": None,  # final diagnosis string from /conclude
-        "start_time": datetime.utcnow().isoformat(),
-        "end_time": None,
-    }
-
-
-def record_exam(session, exam_key):
-    """Records an examination performed (deduplicated). Returns session."""
-    if exam_key not in session["exams_performed"]:
-        session["exams_performed"].append(exam_key)
-    return session
-
-
-def record_investigation(session, investigation_key):
-    """Records an investigation ordered (deduplicated). Returns session."""
-    if investigation_key not in session["investigations_ordered"]:
-        session["investigations_ordered"].append(investigation_key)
-    return session
-
-
-def update_session(session, user_message):
-    """
-    Updates session after every user message.
-    Increments question count, extracts topics, checks for early diagnosis.
-
-    Args:
-        session (dict): Current session dict from server-side store.
-        user_message (str): The raw text the user just sent.
-
-    Returns:
-        dict: Updated session dict (mutated in place, also returned).
-    """
-    # Step 1: increment question counter
-    session["question_count"] += 1
-
-    # Step 2: add raw message to history
-    session["questions_asked"].append(user_message)
-
-    # Step 3: extract topics from this message
-    new_topics = extract_topics(user_message)
-
-    # Step 4: add any new topics not already in covered list
-    for topic in new_topics:
-        if topic not in session["topics_covered"]:
-            session["topics_covered"].append(topic)
-
-    # Step 5: check for early diagnosis mention
-    early_diagnosis_phrases = [
-        "i think it is", "i think this is", "this looks like",
-        "probably ", "could be ", "i believe", "my diagnosis",
-        "seems like", "this is a case of", "i suspect",
-        "it is likely", "most likely",
-    ]
-    message_lower = user_message.lower()
-    if session["early_diagnosis"] is None:
-        for phrase in early_diagnosis_phrases:
-            if phrase in message_lower:
-                session["early_diagnosis"] = user_message
-                break
-
-    return session
-
-
-def extract_topics(user_message):
+def extract_topics(user_message: str) -> list[str]:
     """
     Scans a user message for keywords matching clinical topic categories.
     Uses the TOPIC_KEYWORDS dictionary.
@@ -399,49 +273,3 @@ def extract_topics(user_message):
                 break   # only add each topic once even if multiple keywords match
 
     return covered
-
-
-def get_session_summary(session, case_config):
-    """
-    Returns a readable summary dict for the post-session display screen.
-    Used to show the user what they covered and missed.
-
-    Args:
-        session (dict): Completed session dict.
-        case_config (dict): The case definition from cases.py.
-
-    Returns:
-        dict: Summary with coverage stats and missed topics.
-    """
-    required = case_config["required_topics"]
-    covered = session["topics_covered"]
-
-    topics_hit = [t for t in required if t in covered]
-    topics_missed = [t for t in required if t not in covered]
-    coverage_percent = (
-        round((len(topics_hit) / len(required)) * 100) if required else 0
-    )
-
-    # Calculate time taken
-    time_taken = None
-    end_time = session.get("end_time")
-    start_time = session.get("start_time")
-    if end_time and start_time:
-        try:
-            end_dt = datetime.fromisoformat(end_time)
-            start_dt = datetime.fromisoformat(start_time)
-            time_taken = int((end_dt - start_dt).total_seconds())
-        except Exception:
-            time_taken = None
-
-    return {
-        "questions_asked": session["question_count"],
-        "topics_covered_count": len(topics_hit),
-        "topics_required_count": len(required),
-        "coverage_percent": coverage_percent,
-        "topics_missed": [t.replace("_", " ") for t in topics_missed],
-        "exams_performed_count": len(session.get("exams_performed", [])),
-        "investigations_ordered_count": len(session.get("investigations_ordered", [])),
-        "diagnosis_given": session["diagnosis_submitted"],
-        "time_taken_seconds": time_taken,
-    }

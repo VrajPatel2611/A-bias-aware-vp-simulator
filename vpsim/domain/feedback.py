@@ -1,33 +1,18 @@
 """
-feedback_generator.py
----------------------
-Generates feedback after a consultation, combining:
-  - cognitive-bias detection (bias_detector.py)
-  - clinical evaluation: diagnosis correctness, exam & investigation coverage
-    (clinical_evaluator.py)
+Feedback composition — the pure half.
 
-Feedback philosophy (Sprint 3):
-  - If the diagnosis is CORRECT  → acknowledge it, then coach the process
-    gaps ("right answer — but here's how to get there more safely").
-  - If PARTIAL / ANCHORED / OTHER → Socratic redirect, without revealing
-    the answer outright.
-  - Never use the words "bias", "anchoring", "premature closure",
-    "confirmation bias".
-  - Always produce something useful even if the API fails (rule-based
-    fallback).
+Builds the prompt sent to the language model, and produces rule-based feedback
+when the model is unavailable. No I/O: the actual model call lives in
+infra/feedback.py (ADR-0009).
 
-Uses: Groq chat-completions API. Model configurable via GROQ_MODEL.
-Evaluators: medical students (clinical vocabulary is appropriate).
+Pedagogical constraints (PRD P1):
+  - never name a bias ("bias", "anchoring", "premature closure", "confirmation
+    bias") in learner-facing text
+  - when the diagnosis is wrong, do not state the correct answer
+  - coach the process, not the answer
 """
 
-import os
-from dotenv import load_dotenv
-from groq import Groq
-
-load_dotenv()
-
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-LLM_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+from vpsim.domain.types import Case, ClinicalEval, Session
 
 _FEEDBACK_SYSTEM_INSTRUCTION = """You are a clinical tutor giving feedback to a \
 medical student after a virtual-patient history, examination and investigation \
@@ -48,51 +33,8 @@ clinical vocabulary — they are a medical student.
 numbering, no preamble, no sign-off."""
 
 
-def generate_feedback(bias_results, clinical_eval, session, case_config):
-    """
-    Main entry point.
-
-    Args:
-        bias_results (dict):   output of detect_all_biases().
-        clinical_eval (dict):  output of evaluate_clinical().
-        session (dict):        completed session.
-        case_config (dict):    case definition.
-
-    Returns:
-        list[str]: 3-5 feedback lines.
-    """
-    detected_biases = [
-        {"name": name, "reason": r["reason"]}
-        for name, r in bias_results.items() if r["detected"]
-    ]
-
-    prompt = build_feedback_prompt(
-        detected_biases, clinical_eval, session, case_config
-    )
-
-    try:
-        response = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": _FEEDBACK_SYSTEM_INSTRUCTION},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=450,
-            temperature=0.7,
-        )
-        feedback_text = response.choices[0].message.content or ""
-        lines = [l.strip(" -•\t") for l in feedback_text.split("\n")
-                 if len(l.strip()) > 10]
-        if lines:
-            return lines[:5]
-        # empty response → fall through to rule-based
-    except Exception as e:
-        print(f"LLM feedback call failed: {e}")
-
-    return build_fallback_feedback(detected_biases, clinical_eval, case_config)
-
-
-def build_feedback_prompt(detected_biases, clinical_eval, session, case_config):
+def build_feedback_prompt(detected_biases: list[dict[str, str]], clinical_eval: ClinicalEval,
+                          session: Session, case_config: Case) -> str:
     """Constructs the Gemini prompt with full clinical context."""
     dx   = clinical_eval["diagnosis"]
     exam = clinical_eval["examinations"]
@@ -142,7 +84,8 @@ def build_feedback_prompt(detected_biases, clinical_eval, session, case_config):
     )
 
 
-def build_fallback_feedback(detected_biases, clinical_eval, case_config):
+def build_fallback_feedback(detected_biases: list[dict[str, str]], clinical_eval: ClinicalEval,
+                            case_config: Case) -> list[str]:
     """Rule-based feedback used when the API is unavailable."""
     dx   = clinical_eval["diagnosis"]
     exam = clinical_eval["examinations"]

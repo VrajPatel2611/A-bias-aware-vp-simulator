@@ -15,10 +15,13 @@ Called by app.py /conclude. Output is consumed by feedback_generator.py
 (for tone + content) and the feedback page (for display).
 """
 
+from typing import Any
+
+from vpsim.domain.types import Case, ClinicalEval, Session
 
 # ── Diagnosis correctness ─────────────────────────────────────────────
 
-def assess_diagnosis(diagnosis, case_config):
+def assess_diagnosis(diagnosis: str | None, case_config: Case) -> dict[str, Any]:
     """
     Classifies the submitted diagnosis.
 
@@ -61,7 +64,7 @@ def assess_diagnosis(diagnosis, case_config):
 
 # ── Examination coverage ──────────────────────────────────────────────
 
-def assess_examinations(session, case_config):
+def assess_examinations(session: Session, case_config: Case) -> dict[str, Any]:
     """
     Compares examinations performed against the KEY examinations for the case.
 
@@ -98,7 +101,7 @@ def assess_examinations(session, case_config):
 
 # ── Investigation appropriateness ─────────────────────────────────────
 
-def assess_investigations(session, case_config):
+def assess_investigations(session: Session, case_config: Case) -> dict[str, Any]:
     """
     Compares investigations ordered against the case's categorised tests.
 
@@ -141,7 +144,7 @@ def assess_investigations(session, case_config):
     }
 
 
-def evaluate_clinical(session, case_config):
+def evaluate_clinical(session: Session, case_config: Case) -> ClinicalEval:
     """
     Convenience wrapper — runs all three clinical assessments.
 

@@ -24,10 +24,10 @@ Usage:
 Only the Python standard library is required.
 """
 
-import os
-import sys
 import json
 import math
+import os
+import sys
 from collections import defaultdict
 
 BIAS_KEYS = [
@@ -49,7 +49,7 @@ def load_sessions(folder):
         if not fname.endswith(".json"):
             continue
         try:
-            with open(os.path.join(folder, fname), "r", encoding="utf-8") as f:
+            with open(os.path.join(folder, fname), encoding="utf-8") as f:
                 records.append(json.load(f))
         except Exception as e:
             print(f"  ! skipped unreadable file {fname}: {e}")
@@ -59,7 +59,7 @@ def load_sessions(folder):
 def coverage_percent(rec):
     """History coverage % = topics covered that were required, / required."""
     # Required topics are not stored in the log, so we recompute from the case.
-    from cases import get_case
+    from vpsim.domain.content.cases import get_case
     case = get_case(rec.get("case_id", ""))
     if not case:
         return None

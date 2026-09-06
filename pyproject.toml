@@ -1,0 +1,59 @@
+[project]
+name = "vpsim"
+version = "0.2.0"
+description = "A bias-aware virtual patient simulator for clinical reasoning training"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.1",
+    "groq>=1.6",
+    "python-dotenv>=1.2",
+    "pydantic-settings>=2.0",
+    "sentry-sdk[flask]>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8", "pytest-cov>=5", "hypothesis>=6",
+    "import-linter>=2", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7",
+]
+# Runtime-only extras for the container image (T-004 Dockerfile).
+prod = ["gunicorn>=22"]
+
+[project.scripts]
+vpsim = "vpsim.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["vpsim*"]
+
+[tool.setuptools.package-data]
+vpsim = ["web/templates/*.html", "web/static/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]          # long lines are tolerated in clinical content
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: excluded from the default run"]
+# Coverage is enforced on domain/ only. Chasing it on I/O glue produces tests
+# that assert mocks (TECH_SPEC §12).
+addopts = "--cov=vpsim.domain --cov-report=term-missing --cov-fail-under=90"
+
+# Layering contract (ADR-0009), enforced in CI by T-004.
+# domain/ is pure: it must not reach into infrastructure or the web layer.
+[tool.importlinter]
+root_package = "vpsim"
+
+[[tool.importlinter.contracts]]
+name = "domain must not import infra or api"
+type = "forbidden"
+source_modules = ["vpsim.domain"]
+forbidden_modules = ["vpsim.infra", "vpsim.api", "vpsim.app"]

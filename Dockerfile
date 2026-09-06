@@ -1,0 +1,72 @@
+# VPSim container image (BUILD_PLAN T-005 · TECH_SPEC §9.1 · ADR-0008).
+#
+# Multi-stage: the build stage carries pip, compilers and build metadata; the
+# runtime stage carries only the installed package and its dependencies.
+
+# ── build stage ──────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# The whole package is copied before installing, so `pip install .` produces a
+# COMPLETE distribution — templates and static files included via the
+# package-data entry in pyproject.toml.
+#
+# This costs layer caching: any source change reinstalls dependencies. The
+# alternative (installing dependencies from requirements.txt first, then the
+# package with --no-deps) caches better but makes requirements.txt load-bearing
+# for the image, and it can drift from pyproject.toml. Correctness wins; the
+# image is built in CI where a warm cache matters little.
+COPY pyproject.toml README.md ./
+COPY vpsim/ ./vpsim/
+
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir --prefix=/install ".[prod]"
+
+# ── runtime stage ────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+# Never run as root. A container escape starting from uid 0 is a very different
+# incident from one starting as an unprivileged user (SECURITY_SPEC §3, T6).
+RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 vpsim
+
+WORKDIR /app
+
+# Only the installed package and its dependencies cross the stage boundary.
+# There is deliberately no second copy of the source at /app: two importable
+# copies of `vpsim` on the path shadow each other unpredictably.
+COPY --from=builder /install /usr/local
+
+USER vpsim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8000
+
+EXPOSE 8000
+
+# /healthz, added in T-007. Liveness only: it touches no dependency, so a
+# database outage does not trigger a restart loop. Previously this probed "/",
+# which rendered the entire case list every 30 seconds.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request,sys; \
+sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).status==200 else 1)"
+
+# --workers 1 is NOT a performance choice. Session state is a dict in process
+# memory (infra/session_store.py, blocker B1), so a second worker would serve
+# requests that cannot see the session.
+#
+# TECH_SPEC §9.1 specifies 2 workers x 4 threads. That describes the system
+# AFTER T-013 moves session state into an event log — the spec says so itself:
+# "multiple workers are only safe because session state left process memory".
+# Raise this in T-013, not before.
+# NO --access-logfile. Gunicorn's access log is plain text, so it breaks the
+# "JSON logs to stdout" contract (TECH_SPEC §10), duplicates the app's own
+# request log, and re-adds the /healthz probe every 30s that the app-level
+# filter exists to remove. The after_request handler in vpsim/app.py already
+# logs every request as JSON with correlation ids and a duration.
+#
+# --error-logfile is kept: gunicorn's own failures (worker crash, bind refused)
+# happen outside Flask and would otherwise be invisible.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", \
+     "--error-logfile", "-", "vpsim.app:app"]
