@@ -349,8 +349,26 @@ repeatedly across four tasks; one of them was passing because of an undeclared
 manual change, and no amount of running it locally would ever have revealed
 that. It took a machine that had never been touched.
 
-**`gitleaks` still has not run** — it is the step after `pip-audit` in the same
-job, so the failure stopped short of it.
+**`gitleaks` then ran** on the next push and reported `🛑 Leaks detected` — 4
+findings. Installed locally to inspect them rather than assume:
+
+| File | Value | What it is |
+|---|---|---|
+| `tests/test_config.py` | `gsk_abc123def456` | fixture: "a real-looking key is accepted" |
+| `tests/test_telemetry.py` | `sk_live_51HxYz…` | Stripe fixture for the redaction test |
+| `tests/test_telemetry.py` | `gsk_abcdefghij…` | sequential alphabet, redaction fixture |
+| `API_CONTRACT.md` | `8f14e45f-ea4c-…` | an `Idempotency-Key` example — a UUID, not a credential |
+
+All four are fixtures and documentation. `redaction.py` cannot be tested without
+strings shaped like real keys.
+
+**Fixed** with `.gitleaks.toml` allowlisting the exact values. Deliberately
+**not** by path: allowlisting `tests/` would be shorter and would also hide a
+real key pasted into a test file one day. Adding a new fixture now means adding
+a line to the allowlist, which is the right way round — it fails closed.
+
+Verified both directions: `no leaks found` with the allowlist in place, and a
+plausible unlisted key planted in the tree is still caught.
 
 ---
 

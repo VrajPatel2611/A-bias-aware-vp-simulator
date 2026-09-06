@@ -1,0 +1,39 @@
+# gitleaks configuration.
+#
+# The default ruleset, plus a narrow allowlist for values that LOOK like
+# credentials because they are deliberately shaped like credentials: fixtures
+# for the redaction tests, and examples in the API documentation.
+#
+# The allowlist is by EXACT VALUE, not by path. Allowlisting `tests/` would be
+# simpler and would also hide a real key pasted into a test file one day. This
+# way a genuinely new secret still fails the build; the cost is that adding a
+# new fake fixture means adding a line here, which is the right way round.
+#
+# Verified: `gitleaks git --no-banner` reports no leaks with this in place, and
+# reports them again if a line below is removed.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and documentation examples — no real credentials"
+
+regexes = [
+  # vpsim/infra/telemetry/redaction.py must be tested against strings shaped
+  # like real keys, or the redaction it performs is untested. Each of these is
+  # obviously synthetic: sequential alphabets and repeated patterns.
+  '''gsk_abc123def456''',
+  '''gsk_abcdefghij1234567890''',
+  '''gsk_abcdefghijklmnop1234''',
+  '''sk-abcdefghijklmnop1234''',
+  '''sk_live_51HxYzAbCdEfGhIj''',
+  '''pk_test_51HxYzAbCdEfGhIj''',
+  '''AIzaSyAbcdefghijklmnop123456''',
+
+  # AWS's own published documentation placeholder.
+  '''AKIAIOSFODNN7EXAMPLE''',
+
+  # API_CONTRACT §2.8 — an Idempotency-Key header example. A UUID, not a
+  # credential; gitleaks' generic-api-key rule cannot tell the difference.
+  '''8f14e45f-ea4c-4b0e-9d3a-2b1c7f0d5e6a''',
+]
