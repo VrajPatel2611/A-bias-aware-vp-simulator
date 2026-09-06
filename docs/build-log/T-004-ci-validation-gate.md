@@ -314,6 +314,46 @@ Annotations are backed by a new `vpsim/domain/types.py`, so signatures read
 
 ---
 
+## 7.4 · What the first real CI run caught
+
+Added 6 September 2026, after the workflow ran for the first time on PR #1.
+
+**5 of 6 jobs passed first time** — including `Docker image builds` and
+`Detector validation (research claim)`. `Security` failed:
+
+```
+pip-audit
+  setuptools 82.0.1  PYSEC-2026-3447  (fix: 83.0.0)
+  Process completed with exit code 1
+```
+
+**The same command passed locally.** Reproduced in a fresh virtualenv and the
+difference was immediate:
+
+```
+fresh venv  setuptools 82.0.1  ->  pip-audit exit 1
+local venv  setuptools 84.0.0  ->  pip-audit exit 0
+```
+
+`setuptools` ships with the virtualenv; nothing here depends on it. It was
+upgraded **by hand** during §7.2 of this task to clear that very advisory, and
+that fix existed only in one developer's environment. Every local run since has
+been green for a reason that was never written down.
+
+**Fixed** by pinning `setuptools>=83` in the `dev` extra, so the requirement
+lives in `pyproject.toml` rather than in someone's shell history. Verified in a
+clean virtualenv: `No known vulnerabilities found`.
+
+This is the argument for CI in a single incident. Six local checks had passed
+repeatedly across four tasks; one of them was passing because of an undeclared
+manual change, and no amount of running it locally would ever have revealed
+that. It took a machine that had never been touched.
+
+**`gitleaks` still has not run** — it is the step after `pip-audit` in the same
+job, so the failure stopped short of it.
+
+---
+
 ## 8 · Verification
 
 ```bash

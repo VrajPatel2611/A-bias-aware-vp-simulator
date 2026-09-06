@@ -15,6 +15,12 @@ dependencies = [
 dev = [
     "pytest>=8", "pytest-cov>=5", "hypothesis>=6",
     "import-linter>=2", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7",
+    # Not a dependency of ours — it ships with the virtualenv. Pinned above
+    # PYSEC-2026-3447, which the bundled version carries, so that a fresh
+    # environment is audit-clean without anyone remembering to upgrade it.
+    # Found by CI: it passed locally only because setuptools had been upgraded
+    # by hand in one developer's venv (T-004).
+    "setuptools>=83",
 ]
 # Runtime-only extras for the container image (T-004 Dockerfile).
 prod = ["gunicorn>=22"]
