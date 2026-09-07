@@ -1,0 +1,30 @@
+# Keep the build context small and free of anything that should never reach an
+# image: virtualenvs, git history, secrets, test and doc trees.
+
+venv/
+.venv/
+.git/
+.github/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+tests/
+docs/
+report/
+sessions/
+
+# Secrets never enter an image (SECURITY_SPEC §5.1). Configuration arrives as
+# environment variables at runtime.
+.env
+*.pem
+*.key
+
+# Compose and its init scripts are used BY the daemon, not copied INTO the image.
+docker-compose.yml
+docker/

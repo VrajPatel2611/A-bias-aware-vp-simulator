@@ -14,8 +14,10 @@ Each detector returns a dict:
   {detected: bool, score: float 0-1, reason: str, evidence: list}
 """
 
+from vpsim.domain.types import BiasResults, Case, DetectorResult, Session
 
-def detect_all_biases(session, case_config):
+
+def detect_all_biases(session: Session, case_config: Case) -> BiasResults:
     """
     Main entry point. Runs all three bias detectors and returns combined
     results. This is the only function app.py calls from this module.
@@ -38,7 +40,7 @@ def detect_all_biases(session, case_config):
     }
 
 
-def detect_anchoring(session, case_config):
+def detect_anchoring(session: Session, case_config: Case) -> DetectorResult:
     """
     Checks if user over-focused on the anchor topic without
     exploring alternative explanations.
@@ -87,7 +89,7 @@ def detect_anchoring(session, case_config):
     if total_questions >= 4:
         concentration = anchor_question_count / total_questions
         if concentration > 0.60:
-            detected_A1 = True 
+            detected_A1 = True
             score_A1 = round(concentration, 2)
 
     # Rule A2: 3+ anchor questions with zero alternative exploration
@@ -118,7 +120,7 @@ def detect_anchoring(session, case_config):
     }
 
 
-def detect_premature_closure(session, case_config):
+def detect_premature_closure(session: Session, case_config: Case) -> DetectorResult:
     """
     Checks if user concluded before conducting a thorough workup.
 
@@ -195,7 +197,25 @@ def detect_premature_closure(session, case_config):
     }
 
 
-def detect_confirmation_bias(session, case_config):
+def clue_keywords(clue: list[str] | tuple[str, ...] | str) -> list[str]:
+    """
+    The keyword list a contradictory clue is matched by.
+
+    Shared with tests/test_case_invariants.py so that invariant C-4 is checked
+    against the same terms the detector actually matches on. If this logic and
+    the invariant test ever disagree, C-4 stops protecting anything — which is
+    the failure mode that produced the bug it exists to prevent.
+
+    A curated list is used as-is. A legacy free-text clue is split into words
+    longer than 4 characters, which is what made the old clues collide with the
+    anchor vocabulary in the first place.
+    """
+    if isinstance(clue, (list, tuple)):
+        return [k.lower() for k in clue]
+    return [w for w in clue.lower().split() if len(w) > 4]
+
+
+def detect_confirmation_bias(session: Session, case_config: Case) -> DetectorResult:
     """
     Checks if user only sought confirming evidence for their
     initial assumption and never explored contradictory information.
@@ -230,10 +250,7 @@ def detect_confirmation_bias(session, case_config):
     # question the student asked.
     clues_explored = 0
     for clue in contradictory_clues:
-        if isinstance(clue, (list, tuple)):
-            keywords = [k.lower() for k in clue]
-        else:
-            keywords = [w for w in clue.lower().split() if len(w) > 4]
+        keywords = clue_keywords(clue)
 
         clue_found = False
         for question in all_questions:

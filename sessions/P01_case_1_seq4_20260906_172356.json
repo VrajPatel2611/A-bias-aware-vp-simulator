@@ -1,0 +1,98 @@
+{
+  "session_id": "P01_case_1_seq4_20260906_172356",
+  "case_id": "case_1",
+  "case_title": "The Chest Pain Trap",
+  "correct_diagnosis": "GERD (Gastroesophageal Reflux Disease) — specifically NSAID-induced GERD",
+  "participant": {
+    "participant_id": "P01",
+    "session_sequence": 4,
+    "year_of_study": "year_3",
+    "confidence_pre": "3"
+  },
+  "start_time": "2026-09-06T17:23:56.897037+00:00",
+  "end_time": "2026-09-06T17:23:56.902998+00:00",
+  "question_count": 0,
+  "questions_asked": [],
+  "topics_covered": [],
+  "exams_performed": [
+    "vitals"
+  ],
+  "investigations_ordered": [
+    "ecg"
+  ],
+  "early_diagnosis": null,
+  "diagnosis_submitted": "ZZDIAGNOSISMARKERZZ reflux",
+  "diagnosis_verdict": "correct",
+  "biases_detected": {
+    "anchoring": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant anchoring pattern detected.",
+      "evidence": []
+    },
+    "premature_closure": {
+      "detected": true,
+      "score": 1.0,
+      "reason": "You asked only 0 questions (minimum recommended: 7) and covered 0 of 8 key history areas. Areas not explored: pain character, meal relationship, radiation, associated symptoms, medications, family history, duration pattern, relieving factors.",
+      "evidence": [
+        "pain character",
+        "meal relationship",
+        "radiation",
+        "associated symptoms",
+        "medications",
+        "family history",
+        "duration pattern",
+        "relieving factors"
+      ]
+    },
+    "confirmation_bias": {
+      "detected": false,
+      "score": 0.0,
+      "reason": "No significant confirmation bias detected.",
+      "evidence": [
+        "Only 0/6 contradictory areas explored"
+      ]
+    }
+  },
+  "clinical_eval": {
+    "diagnosis": {
+      "verdict": "correct",
+      "label": "Correct diagnosis",
+      "matched": "reflux"
+    },
+    "examinations": {
+      "performed": [
+        "Vital signs"
+      ],
+      "key_done": [
+        "Vital signs"
+      ],
+      "key_missed": [
+        "Cardiovascular exam",
+        "Abdominal exam"
+      ],
+      "total_key": 3
+    },
+    "investigations": {
+      "ordered": [
+        "ECG (12-lead)"
+      ],
+      "key_done": [
+        "ECG (12-lead)"
+      ],
+      "key_missed": [
+        "High-sensitivity Troponin (0 h)",
+        "High-sensitivity Troponin (3 h)",
+        "OGD (Gastroscopy)"
+      ],
+      "low_value_ordered": [],
+      "total_key": 4
+    }
+  },
+  "feedback_given": [
+    "Correct diagnosis — well reasoned. Now make sure your process is as sound as your conclusion.",
+    "You did not examine: Cardiovascular exam, Abdominal exam. How might that have changed your assessment?",
+    "You concluded without these key investigations: High-sensitivity Troponin (0 h), High-sensitivity Troponin (3 h), OGD (Gastroscopy). What were you hoping to rule in or out?",
+    "What piece of information, if you had found it, would have made you reconsider your diagnosis entirely — and did you look for it?"
+  ]
+}

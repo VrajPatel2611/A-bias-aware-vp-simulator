@@ -18,6 +18,8 @@ Case list:
   case_5: Aisha Khan,   21F — Vomiting + abdo pain — DKA vs Gastroenteritis
 """
 
+from vpsim.domain.types import Case, CaseSummary
+
 CASES = {
 
     # ──────────────────────────────────────────────────────────────────
@@ -74,7 +76,17 @@ CASES = {
         ),
         "anchor_topic": "cardiac / heart disease",
         "anchor_keywords": [
-            "heart", "cardiac", "mi", "myocardial", "infarction", "angina",
+            # NOT bare "heart" — it is a substring of "heartburn", which is a
+            # contradictory clue, and the detectors match by substring. The
+            # specific phrases below carry the same cardiac intent without
+            # matching a learner who is correctly chasing reflux (invariant
+            # C-4, DATA_MODEL §8.1).
+            "heart problem", "heart disease", "heart condition", "my heart",
+            "heart failure",
+            # NOT "mi" — it is a substring of "exaMIne", "voMIting" and
+            # "abdoMInal", so ordinary questions counted as cardiac fixation.
+            # "myocardial" and "heart attack" carry the same intent safely.
+            "cardiac", "myocardial", "infarction", "angina",
             "ecg", "ekg", "electrocardiogram", "troponin", "cholesterol",
             "coronary", "arteri", "palpitation", "heart attack", "stent",
             "bypass", "cardiologist", "cardiac enzyme", "stress test",
@@ -83,7 +95,9 @@ CASES = {
             "defibrillator", "chest tightness"
         ],
         "alternative_topics": [
-            "reflux", "gastro", "gi", "gastrointestinal", "stomach",
+            # NOT "gi" — substring of "allerGIes", "beGIn", "reGIon".
+            # "gastro" and "gastrointestinal" cover it.
+            "reflux", "gastro", "gastrointestinal", "stomach",
             "oesophagus", "esophagus", "food", "meal", "eating", "diet",
             "spicy", "ibuprofen", "nsaid", "anti-inflammatory", "painkiller",
             "acid", "antacid", "heartburn", "burning", "after eating",
@@ -170,11 +184,11 @@ CASES = {
             "infection", "pneumonia", "antibiotic", "chest infection", "viral",
             "cold", "flu", "bronchitis", "bacteria", "sputum", "productive",
             "upper respiratory", "throat infection", "tamiflu", "oseltamivir",
-            "caught something", "plane germs", "travel bug", "amoxicillin",
+            "caught something", "plane germs", "amoxicillin",
             "cough syrup", "nebuliser", "steam inhalation", "gp", "sick",
         ],
         "alternative_topics": [
-            "dvt", "deep vein", "clot", "embolism", "pe", "ctpa",
+            "dvt", "deep vein", "clot", "embolism", "pulmonary embolism", "ctpa",
             "anticoagulant", "d-dimer", "heparin", "warfarin", "rivaroxaban",
             "wells", "thrombosis", "ocp", "pill", "contraceptive", "flight",
             "flew", "travel", "immobile", "immobility", "calf", "leg swelling",
@@ -2390,7 +2404,7 @@ MASTER_EXAMINATIONS = {
 }
 
 
-def get_case(case_id):
+def get_case(case_id: str) -> Case | None:
     """
     Returns a single case config dict by ID.
 
@@ -2403,7 +2417,7 @@ def get_case(case_id):
     return CASES.get(case_id)
 
 
-def get_all_cases():
+def get_all_cases() -> list[CaseSummary]:
     """
     Returns a lightweight list of all cases for the selection screen.
     Only includes id, title, and intro — not the full config.
@@ -2414,8 +2428,8 @@ def get_all_cases():
     return [
         {
             "id": case_id,
-            "title": data["title"],
-            "intro": data["patient_intro"]
+            "title": str(data["title"]),
+            "intro": str(data["patient_intro"]),
         }
         for case_id, data in CASES.items()
     ]

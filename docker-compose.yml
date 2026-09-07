@@ -1,0 +1,72 @@
+# Local development stack (BUILD_PLAN T-005).
+#
+#   docker compose up --build
+#
+# Brings up the application on http://localhost:8000 and Postgres 16 with
+# pgvector on localhost:5432.
+#
+# NOTE: the application does not talk to the database yet. Schema and
+# repositories arrive with T-010 and T-012. Postgres is here now so that work
+# has somewhere to land, and so `docker compose up` is the single command a new
+# machine needs from this point on.
+
+services:
+  db:
+    # pgvector's own image rather than postgres:16 plus a manual build step:
+    # Postgres 16 with the extension already compiled and version-matched
+    # (ADR-0001). Pinned to a digest-stable tag; T-045 should pin by digest.
+    image: pgvector/pgvector:pg16
+    container_name: vpsim-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vpsim}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vpsim_local_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-vpsim}
+      # Deterministic collation, so index ordering matches production
+      # regardless of the developer's locale.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      # Exposed so you can attach psql or a GUI client. Not exposed in
+      # production — nothing outside the network should reach the database.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs ONCE, on an empty data directory. Editing these files later has no
+      # effect until the volume is removed (`docker compose down -v`).
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # pg_isready, not a TCP check: Postgres accepts connections during
+      # initialisation and then restarts, so a port check passes too early and
+      # the app races the database.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vpsim} -d ${POSTGRES_DB:-vpsim}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpsim-app
+    depends_on:
+      db:
+        # Wait for healthy, not merely started. `started` means the container
+        # exists, which is not the same as Postgres accepting queries.
+        condition: service_healthy
+    environment:
+      # Passed through from your shell or .env. The app boots without it — the
+      # gateway builds its client lazily — but the patient will not reply.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      # A fixed key keeps browser sessions valid across restarts. Local only:
+      # production sets a real secret (SECURITY_SPEC §5.1).
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-local-development-only-not-a-secret}
+      # Consumed from T-012 onward; set now so compose does not change then.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vpsim}:${POSTGRES_PASSWORD:-vpsim_local_dev_only}@db:5432/${POSTGRES_DB:-vpsim}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

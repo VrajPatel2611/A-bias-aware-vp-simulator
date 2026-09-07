@@ -1,0 +1,133 @@
+name: CI
+
+# Every check below must pass before a pull request can merge. The
+# detector-validation job is the unusual one: it fails the build if the
+# published research figure degrades (TECH_SPEC §9.4, ADR-0004).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint:
+    name: Lint and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: ruff
+        run: ruff check .
+
+      - name: mypy (domain, strict)
+        # Strict on domain/ only. It is the pure layer and the part that must be
+        # correct; api/ and infra/ are covered by tests and are being replaced
+        # (T-030).
+        run: mypy vpsim/domain --strict
+
+      - name: import-linter (ADR-0009 layering contract)
+        run: lint-imports
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: pytest
+        # Coverage gate (>=90% on vpsim.domain) is configured in pyproject.toml.
+        # No test may make a network call — enforced by an autouse fixture.
+        run: pytest -m "not slow" -q
+        env:
+          GROQ_API_KEY: not-a-real-key-tests-must-never-call-a-model
+
+  validation:
+    name: Detector validation (research claim)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e .
+
+      - name: Detector accuracy must not drop below 94%
+        # THIS IS THE UNUSUAL ONE. The published paper reports 94% accuracy
+        # across all detector decisions. This script exits non-zero below that,
+        # so no change can silently degrade the instrument the claim rests on.
+        #
+        # If this fails: do not lower MINIMUM_ACCURACY. Find out what changed.
+        run: python validate_detectors.py
+
+      - name: Upload the validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detector-validation
+          path: docs/detector_validation.md
+
+  case-invariants:
+    name: Case content invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: C-1 … C-9
+        # Separate job so a content error is reported as a content error rather
+        # than buried in a 227-test run. C-4 is the invariant whose absence cost
+        # 14% sensitivity (T-003); C-8 and C-9 came out of T-002.
+        run: pytest tests/test_case_invariants.py -v --no-cov
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # gitleaks scans history, not just the diff
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: pip-audit (SECURITY_SPEC §5.2)
+        run: pip-audit --skip-editable
+
+      - name: gitleaks (BUILD_PLAN T-006 · SECURITY_SPEC §5.1)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        # Build only — not pushed. Deployment is T-045.
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: vpsim:ci
