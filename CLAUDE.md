@@ -16,7 +16,8 @@ read only those sections.
 
 | Task | Read |
 |---|---|
-| Anything at all | This file, then `docs/spec/README.md` |
+| Anything at all | This file, then `docs/PROJECT_MAP.md` |
+| What is every file in here? | `docs/PROJECT_MAP.md` — the full tree, annotated |
 | Why was X chosen? | `docs/spec/adr/` — 15 one-page records. **Check here before re-arguing a decision** |
 | Building a feature | `docs/spec/BUILD_PLAN.md` → find the task → read only its `Spec` refs |
 | Schema / migration | `docs/spec/DATA_MODEL.md` — the relevant table section only |
