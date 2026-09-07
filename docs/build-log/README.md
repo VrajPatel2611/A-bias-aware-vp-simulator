@@ -13,6 +13,24 @@ diverged from it — with the reason.
 
 ---
 
+## Where things stand
+
+[`STATUS.md`](STATUS.md) is the progress tracker: every task, its phase, owner,
+estimate, dependency and whether it is done, with a link to its build log.
+
+**It is generated, never hand-edited:**
+
+```bash
+python scripts/build_status.py
+```
+
+It reads `docs/spec/BUILD_PLAN.md` and cannot disagree with it. A status page
+maintained by remembering to update it is a status page that is quietly wrong
+within a fortnight — the same reasoning as the test that keeps `.env.example`
+honest. **Regenerate it when you finish a task, and commit the result.**
+
+---
+
 ## One document per task
 
 Every task in `docs/spec/BUILD_PLAN.md` gets a file here when it is finished:

@@ -25,6 +25,7 @@ read only those sections.
 | Requirements / scope | `docs/spec/PRD.md` §5–6 |
 | Writing or running tests | `docs/spec/TEST_STRATEGY.md` §3–5, then §9 |
 | Auth, permissions, secrets, anything security | `docs/spec/SECURITY_SPEC.md` §3–4, then §8 |
+| Which tasks are done | `docs/build-log/STATUS.md` — generated, see below |
 | What was done on a finished task | `docs/build-log/T-xxx-*.md` |
 | A command you half-remember | `docs/process/COMMANDS.md` |
 | How it fits together | `docs/spec/TECH_SPEC.md` §2–3 |
@@ -121,6 +122,7 @@ lint-imports                       # check the domain/infra/api layering contrac
 python validate_detectors.py       # detector validation — must report >= 94%
 python analyze_sessions.py sessions # paired statistics over session JSON
 python test_api.py                 # check the LLM key works
+python scripts/build_status.py     # regenerate docs/build-log/STATUS.md
 ```
 
 ---
