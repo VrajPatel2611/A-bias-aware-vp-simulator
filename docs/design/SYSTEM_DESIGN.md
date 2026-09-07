@@ -1,3 +1,19 @@
+> # ⚠️ SUPERSEDED — DO NOT BUILD FROM THIS DOCUMENT
+>
+> This is **historical record**. It was replaced in full by
+> [`docs/spec/`](../spec/README.md), and it describes decisions the current
+> specification has since **reversed** — most importantly the frontend choice,
+> which is now Next.js + React Native (`ADR-0006`).
+>
+> **Build from `docs/spec/TECH_SPEC.md` instead.**
+>
+> It is kept, rather than deleted, for two reasons: the current specifications
+> still cite it 2 times for detail not carried forward, and it is the
+> record of how the design evolved — which is what makes the reversal in
+> `ADR-0006` legible.
+
+---
+
 # VPSim — System Design & Engineering Specification
 
 **Project:** Bias-Aware Virtual Patient Simulator

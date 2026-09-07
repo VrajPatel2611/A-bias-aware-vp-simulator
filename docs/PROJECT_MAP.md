@@ -176,13 +176,20 @@ of the software.
 
 | File | Words | Status |
 |---|---:|---|
-| PLATFORM_SPEC.md | 12,400 | superseded by `docs/spec/` |
-| SYSTEM_DESIGN.md | 10,900 | superseded by `docs/spec/` |
+| PLATFORM_SPEC.md | 12,400 | ⚠️ superseded — cited 15× by current specs |
+| SYSTEM_DESIGN.md | 10,900 | ⚠️ superseded — historical record |
 
-**Do not build from these.** They are the earlier exploratory design work, kept
-for history. They are also the two longest documents in the repository, which
-makes them a trap — 23,000 words that will confidently tell you something the
-current specification has since changed. `TECH_SPEC.md` replaced them.
+**Do not build from these.** Both now open with a SUPERSEDED banner saying so,
+in the markdown and the Word versions.
+
+They are kept rather than deleted for two concrete reasons: the current
+specifications still **cite `PLATFORM_SPEC` 15 times** for detail not carried
+forward (DATA_MODEL, BUILD_PLAN, TECH_SPEC, UX_SPEC), and `TECH_SPEC` §1.2
+keeps them deliberately as the record of how the design evolved — which is what
+makes the frontend reversal in `ADR-0006` legible.
+
+Deleting them would break 15 live cross-references and lose the reasoning
+behind a decision that was reversed.
 
 ### Loose files in `docs/`
 
@@ -249,7 +256,6 @@ Stated so they are not discovered at a bad moment.
 |---|---|
 | **No compiled PDF of the paper** | `report/` contains only `main.tex`. The built PDF is not in git |
 | **No presentation in the repo** | The 16-slide deck is not tracked. If it exists, it is only on a local machine |
-| **`docs/design/` is 23,000 misleading words** | Superseded but still present. Worth an explicit "SUPERSEDED" banner at the top of each file |
 | **Phases 5–7 are not itemised** | `BUILD_PLAN` §9 summarises them as prose. 53 further days of work with no task breakdown yet |
 | **8 open product decisions** | `PRD` §11 — price, free-tier limit, launch case count, product name. These become gating code, so they need answering before the schema is final |
 
