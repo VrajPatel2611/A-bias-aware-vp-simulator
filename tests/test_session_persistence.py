@@ -55,7 +55,7 @@ class TestAFileIsActuallyWritten:
         assert (in_tmp_cwd / path).exists()
 
     def test_the_file_is_valid_json_with_the_expected_keys(self, in_tmp_cwd, completed):
-        record = json.loads((in_tmp_cwd / _save(*completed)).read_text())
+        record = json.loads((in_tmp_cwd / _save(*completed)).read_text(encoding="utf-8"))
         for key in ("case_id", "participant", "biases_detected",
                     "clinical_eval", "feedback_given"):
             assert key in record
@@ -65,7 +65,7 @@ class TestAFileIsActuallyWritten:
         Property P3 — the record must be enough to recompute the result. That
         requires the questions, since every flag is derived from them.
         """
-        record = json.loads((in_tmp_cwd / _save(*completed)).read_text())
+        record = json.loads((in_tmp_cwd / _save(*completed)).read_text(encoding="utf-8"))
         assert "Could this be a heart problem?" in json.dumps(record)
 
 
@@ -93,7 +93,7 @@ class TestParticipantSequencing:
 
     def test_a_malformed_file_does_not_break_counting(self, in_tmp_cwd, completed):
         _save(*completed, pid="P01")
-        (in_tmp_cwd / "sessions" / "broken.json").write_text("{not json")
+        (in_tmp_cwd / "sessions" / "broken.json").write_text("{not json", encoding="utf-8")
         assert count_prior_sessions("sessions", "P01") == 1
 
 

@@ -19,7 +19,15 @@ import datetime as dt
 import pathlib
 import re
 import subprocess
+import sys
 
+# Windows consoles default to cp1252, which cannot encode the box-drawing and
+# tick characters this script prints — `print("✓")` raises UnicodeEncodeError
+# and the run dies with a traceback rather than a result. Retarget the stream.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PLAN = ROOT / "docs" / "spec" / "BUILD_PLAN.md"
 OUT = ROOT / "docs" / "build-log" / "STATUS.md"
@@ -30,7 +38,7 @@ OWNERS = {"V": "Vraj", "Y": "Yogesh", "both": "Both"}
 
 def parse_tasks() -> list[dict]:
     """Every task in BUILD_PLAN, in document order, with its phase."""
-    text = PLAN.read_text()
+    text = PLAN.read_text(encoding="utf-8")
     tasks: list[dict] = []
     phase_name = ""
 
@@ -201,7 +209,7 @@ def render(tasks: list[dict]) -> str:
 
 def main() -> None:
     tasks = parse_tasks()
-    OUT.write_text(render(tasks) + "\n")
+    OUT.write_text(render(tasks) + "\n", encoding="utf-8")
     done = sum(1 for t in tasks if t["done"])
     print(f"Wrote {OUT.relative_to(ROOT)} — {done}/{len(tasks)} tasks complete")
 

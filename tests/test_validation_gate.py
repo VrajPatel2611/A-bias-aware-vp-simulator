@@ -29,10 +29,14 @@ def _run(cwd=REPO):
     """
     import os
 
-    env = dict(os.environ, PYTHONPATH=str(cwd))
+    # PYTHONIOENCODING and encoding="utf-8" are both needed on Windows: the
+    # child prints tick and box-drawing characters that cp1252 cannot encode,
+    # and `text=True` alone would decode the reply with the locale codec.
+    env = dict(os.environ, PYTHONPATH=str(cwd), PYTHONIOENCODING="utf-8")
     return subprocess.run(
         [sys.executable, str(cwd / "validate_detectors.py")],
-        cwd=cwd, capture_output=True, text=True, timeout=180, env=env,
+        cwd=cwd, capture_output=True, text=True, encoding="utf-8",
+        errors="replace", timeout=180, env=env,
     )
 
 
@@ -71,10 +75,10 @@ def test_fails_when_a_detector_is_degraded(tmp_path):
     )
 
     bias = work / "vpsim" / "domain" / "assessment" / "bias.py"
-    source = bias.read_text()
+    source = bias.read_text(encoding="utf-8")
     assert "if concentration > 0.60:" in source, "rule A1 has moved — update this test"
     bias.write_text(source.replace("if concentration > 0.60:",
-                                   "if concentration > 0.99:"))
+                                   "if concentration > 0.99:"), encoding="utf-8")
 
     r = _run(cwd=work)
     assert r.returncode != 0, (
@@ -101,8 +105,10 @@ def test_the_failure_message_says_not_to_lower_the_threshold(tmp_path):
                                       "docs", "sessions", "*.egg-info"),
     )
     bias = work / "vpsim" / "domain" / "assessment" / "bias.py"
-    bias.write_text(bias.read_text().replace("if concentration > 0.60:",
-                                             "if concentration > 0.99:"))
+    bias.write_text(
+        bias.read_text(encoding="utf-8").replace("if concentration > 0.60:",
+                                                 "if concentration > 0.99:"),
+        encoding="utf-8")
 
     stderr = _run(cwd=work).stderr
     assert "Do not" in stderr and "lower the threshold" in stderr

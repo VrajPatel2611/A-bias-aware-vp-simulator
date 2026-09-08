@@ -43,7 +43,7 @@ def test_no_unpatched_module_imports_call_llm():
     importers = {
         str(py.relative_to(root))
         for py in (root / "vpsim").rglob("*.py")
-        if "import call_llm" in py.read_text()
+        if "import call_llm" in py.read_text(encoding="utf-8")
     }
 
     unpatched = sorted(importers - patched)

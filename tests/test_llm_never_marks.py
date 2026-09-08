@@ -106,6 +106,7 @@ def test_no_assessment_module_imports_the_llm_gateway():
     offenders = [
         str(py.relative_to(root))
         for py in (root / "vpsim" / "domain" / "assessment").rglob("*.py")
-        if "gateway" in py.read_text() or "groq" in py.read_text().lower()
+        if "gateway" in py.read_text(encoding="utf-8")
+        or "groq" in py.read_text(encoding="utf-8").lower()
     ]
     assert not offenders, f"assessment modules referencing the LLM: {offenders}"

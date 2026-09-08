@@ -31,6 +31,13 @@ import subprocess
 import sys
 from collections import defaultdict
 
+# Windows consoles default to cp1252, which cannot encode the box-drawing and
+# tick characters this script prints — `print("✓")` raises UnicodeEncodeError
+# and the run dies with a traceback rather than a result. Retarget the stream.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 BIAS_KEYS = [
     ("anchoring", "Anchoring"),
     ("premature_closure", "Premature closure"),
@@ -56,7 +63,8 @@ def _tracked_json(folder):
     try:
         out = subprocess.run(
             ["git", "ls-files", "--", os.path.join(folder, "*.json")],
-            capture_output=True, text=True, timeout=10, cwd=os.path.dirname(
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=10, cwd=os.path.dirname(
                 os.path.abspath(__file__)) or ".",
         )
         if out.returncode != 0:
