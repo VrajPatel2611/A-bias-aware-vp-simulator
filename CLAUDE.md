@@ -29,6 +29,7 @@ read only those sections.
 | Which tasks are done | `docs/build-log/STATUS.md` — generated, see below |
 | What was done on a finished task | `docs/build-log/T-xxx-*.md` |
 | A command you half-remember | `docs/process/COMMANDS.md` |
+| Setting up on Windows | `docs/process/WINDOWS_SETUP.md` |
 | How it fits together | `docs/spec/TECH_SPEC.md` §2–3 |
 
 `docs/design/` holds **superseded** v1/v2 design docs. Historical only — do not

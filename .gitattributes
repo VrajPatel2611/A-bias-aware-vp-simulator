@@ -1,0 +1,39 @@
+# Line endings.
+#
+# The team is split across macOS and Windows. Without this, Windows checkouts
+# get CRLF, which produces two failures that are hard to attribute:
+#
+#   · a shell script or SQL file with CRLF fails inside the Linux container
+#     with an error that never mentions line endings
+#   · every file looks entirely rewritten in a diff, so review is impossible
+#
+# `text=auto` normalises to LF in the repository while letting Windows check
+# out CRLF where that is harmless. The explicit `eol=lf` entries are files that
+# are executed by Linux and must be LF on disk everywhere.
+
+* text=auto
+
+# Executed by Linux — must be LF on disk, on every platform.
+*.sh            text eol=lf
+*.sql           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+.env.example    text eol=lf
+
+# Source and docs: normalise in the repository.
+*.py            text
+*.md            text
+*.toml          text
+*.js            text
+*.html          text
+*.css           text
+*.json          text
+
+# Binary — never touch these.
+*.docx          binary
+*.pdf           binary
+*.pptx          binary
+*.png           binary
+*.jpg           binary
