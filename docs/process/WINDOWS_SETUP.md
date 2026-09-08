@@ -43,14 +43,28 @@ During installation, tick **"Add python.exe to PATH"** on the first screen. It
 is off by default, and without it `python` is not a command and every later step
 fails with something unhelpful.
 
-Check afterwards, in a **new** PowerShell window:
+**First, check what you already have.** In a **new** PowerShell window:
 
 ```powershell
-py --version
+py -0
 ```
 
-It must say 3.11 or higher. If you already had an older Python, that is fine —
-`py -3.11` selects the right one explicitly.
+That lists every Python on the machine, like `-V:3.13 *` or `-V:3.11`.
+
+| What it shows | What to do |
+|---|---|
+| **3.11, 3.12, 3.13 or newer** | You are fine. Use that number in §4 — e.g. `py -3.13 -m venv venv` |
+| **only 3.10 or older** | Install a newer one, below |
+| **nothing, or "No suitable Python runtime found"** | Install one, below |
+
+`requires-python = ">=3.11"`, so anything from 3.11 up works.
+
+**If you need to install:** get **Python 3.11.x** from python.org — not
+necessarily the newest release. CI runs 3.11 and the container is
+`python:3.11-slim`, so matching it removes a class of "works locally, fails in
+CI" problem. Newer works too; there is just no upside to differing.
+
+Close and reopen PowerShell afterwards, or `py` will not see it.
 
 ### Docker Desktop — needs WSL2
 
@@ -130,6 +144,10 @@ so its packages never collide with anything else on your machine:
 ```powershell
 py -3.11 -m venv venv
 ```
+
+Substitute whichever version `py -0` showed — `py -3.13 -m venv venv` and so on.
+If this says **"No suitable Python runtime found"**, that version is not
+installed; go back to §1.
 
 **Activate it:**
 
@@ -353,7 +371,8 @@ validation fails, something changed the instrument the paper reports.
 | `python` is not recognised | Python not on PATH — reinstall and tick "Add to PATH", or use `py` |
 | `running scripts is disabled` | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
 | `ModuleNotFoundError: vpsim` | venv not activated (no `(venv)` in prompt), or `pip install -e ".[dev]"` not run |
-| `requires a different Python: 3.9` | wrong Python — recreate the venv with `py -3.11 -m venv venv` |
+| `requires a different Python: 3.9` | wrong Python — delete `venv\`, then recreate with a 3.11+ version |
+| `No suitable Python runtime found` | that version is not installed. `py -0` lists what you have |
 | `docker: command not found` | Docker Desktop not installed, or not launched |
 | `Cannot connect to the Docker daemon` | Docker Desktop installed but not running — start it and wait |
 | `address already in use` on 5432 | add `POSTGRES_PORT=5433` to `.env` |
