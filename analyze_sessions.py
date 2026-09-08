@@ -27,9 +27,17 @@ Only the Python standard library is required.
 import json
 import math
 import os
+import subprocess
 import sys
 from collections import defaultdict
 
+# Windows consoles default to cp1252, which cannot encode the box-drawing and
+# tick characters this script prints — `print("✓")` raises UnicodeEncodeError
+# and the run dies with a traceback rather than a result. Retarget the stream.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 BIAS_KEYS = [
     ("anchoring", "Anchoring"),
     ("premature_closure", "Premature closure"),
@@ -39,20 +47,73 @@ BIAS_KEYS = [
 
 # ── Loading ───────────────────────────────────────────────────────────
 
+def _tracked_json(folder):
+    """
+    The JSON files in `folder` that git tracks, or None if git cannot say.
+
+    The research dataset is what has been committed. The running application
+    writes a session file to sessions/ after every consultation, so a demo or a
+    container test drops files into the same directory — and those are working
+    artefacts, not participants.
+
+    This is not hypothetical: six such files were committed during Phase 0 and
+    inflated the reported dataset from 16 to 22 before anyone noticed.
+    `.gitignore` now stops them being committed; this stops them being counted.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "ls-files", "--", os.path.join(folder, "*.json")],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=10, cwd=os.path.dirname(
+                os.path.abspath(__file__)) or ".",
+        )
+        if out.returncode != 0:
+            return None
+        names = {os.path.basename(line) for line in out.stdout.split() if line}
+        return names or None
+    except Exception:
+        return None          # not a git checkout, or git unavailable
+
+
 def load_sessions(folder):
-    """Loads all session JSON records from a folder."""
+    """
+    Loads the session records that make up the research dataset.
+
+    Untracked files are skipped and reported — see _tracked_json for why. If
+    git cannot answer (an unpacked archive, say), every file is loaded and a
+    warning is printed, because silently analysing a different dataset than the
+    one you think you have is the worse failure.
+    """
     records = []
     if not os.path.isdir(folder):
         print(f"Folder not found: {folder}")
         return records
+
+    tracked = _tracked_json(folder)
+    if tracked is None:
+        print("  ! not a git checkout — loading every file in "
+              f"{folder}/, including any working artefacts")
+
+    skipped = []
     for fname in sorted(os.listdir(folder)):
         if not fname.endswith(".json"):
+            continue
+        if tracked is not None and fname not in tracked:
+            skipped.append(fname)
             continue
         try:
             with open(os.path.join(folder, fname), encoding="utf-8") as f:
                 records.append(json.load(f))
         except Exception as e:
             print(f"  ! skipped unreadable file {fname}: {e}")
+
+    if skipped:
+        print(f"  · ignored {len(skipped)} untracked file(s) in {folder}/ "
+              f"— written by the running app, not participant data")
+        for fname in skipped[:5]:
+            print(f"      {fname}")
+        if len(skipped) > 5:
+            print(f"      ... and {len(skipped) - 5} more")
     return records
 
 

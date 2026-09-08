@@ -17,7 +17,7 @@ FORBIDDEN = ("vpsim.infra", "vpsim.api", "vpsim.app")
 
 
 def _imports(path: pathlib.Path):
-    tree = ast.parse(path.read_text())
+    tree = ast.parse(path.read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for a in node.names:

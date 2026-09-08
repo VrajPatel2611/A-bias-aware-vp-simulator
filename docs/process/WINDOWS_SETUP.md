@@ -379,6 +379,7 @@ validation fails, something changed the instrument the paper reports.
 | Every line shows as changed in a diff | `git config --global core.autocrlf true`, then re-clone |
 | `push declined` / `protected branch` | you are on `main`. Make a branch — see §7 |
 | Tests pass, then fail, nothing changed | stale bytecode: delete `__pycache__` folders |
+| `UnicodeDecodeError: 'charmap' codec` | **Fixed on 8 September.** `git pull` on `main`. It was a real bug: file reads without an explicit encoding use cp1252 on Windows, and the repository is UTF-8. CI now runs the suite on Windows so it cannot recur |
 
 `docs/process/COMMANDS.md` has the fuller list. Its commands are written for
 macOS; the differences that matter are:

@@ -126,7 +126,7 @@ class TestEnvExampleStaysHonest:
         Fails when someone adds a Settings field and forgets the documentation.
         Undocumented configuration is configuration nobody sets correctly.
         """
-        text = (REPO / ".env.example").read_text()
+        text = (REPO / ".env.example").read_text(encoding="utf-8")
         documented = set(re.findall(r"^#?\s*([A-Z][A-Z0-9_]+)=", text, re.M))
         missing = sorted(set(Settings.model_fields) - documented)
         assert not missing, f".env.example does not document: {missing}"
@@ -136,11 +136,11 @@ class TestEnvExampleStaysHonest:
         It is committed, so anything key-shaped in it is a leak.
         `gitleaks` covers this in CI; this fails locally, before the push.
         """
-        text = (REPO / ".env.example").read_text()
+        text = (REPO / ".env.example").read_text(encoding="utf-8")
         found = re.findall(r"gsk_[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_-]{30,}|sk-[A-Za-z0-9]{20,}",
                            text)
         assert not found, f".env.example contains a real-looking secret: {found}"
 
     def test_the_real_env_file_is_git_ignored(self):
-        ignored = (REPO / ".gitignore").read_text().splitlines()
+        ignored = (REPO / ".gitignore").read_text(encoding="utf-8").splitlines()
         assert ".env" in [line.strip() for line in ignored]

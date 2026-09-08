@@ -54,6 +54,30 @@ jobs:
         env:
           GROQ_API_KEY: not-a-real-key-tests-must-never-call-a-model
 
+  test-windows:
+    # A SEPARATE job, not a matrix on `test`. A matrix would rename the existing
+    # check to "Tests (ubuntu-latest)", and the branch ruleset requires a check
+    # called exactly "Tests" — which would then never appear, blocking every PR.
+    #
+    # This exists because six tests failed on a Windows machine that had passed
+    # CI six times: open() and read_text() without an explicit encoding use the
+    # LOCALE codec, which is cp1252 on Windows, and the repository is full of
+    # UTF-8. Linux-only CI cannot see that class of bug.
+    name: Tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: pytest
+        run: pytest -m "not slow" -q
+        env:
+          GROQ_API_KEY: not-a-real-key-tests-must-never-call-a-model
+
   validation:
     name: Detector validation (research claim)
     runs-on: ubuntu-latest
