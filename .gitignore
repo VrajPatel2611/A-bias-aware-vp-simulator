@@ -229,3 +229,14 @@ sessions_dummy/
 # docx build tooling
 docs/design/node_modules/
 docs/design/package*.json
+
+# Session files written by the running app.
+#
+# The 16 real pilot sessions (dated 2026-07-31) are already tracked, and
+# .gitignore does not affect tracked files — so they stay in git and changes to
+# them still show. This only stops NEW ones being committed.
+#
+# It matters because analyze_sessions.py counts every file in sessions/ as
+# participant data. Six artefacts from container testing were committed during
+# Phase 0 and inflated the reported dataset from 16 to 22.
+sessions/*.json

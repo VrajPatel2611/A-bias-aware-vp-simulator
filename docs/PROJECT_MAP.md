@@ -158,6 +158,7 @@ python scripts/build_status.py
 | File | What it is |
 |---|---|
 | **COMMANDS.md** ★ | **Every terminal command, grouped by what you want to do.** §7 is the troubleshooting section — every error we have actually hit, with its fix |
+| **WINDOWS_SETUP.md** | **Yogesh's onboarding — install, configure, and the PR workflow now that `main` is protected** |
 | AI_BUILD_PROMPT.md | The reusable brief for working with an AI on a project: spec first, one task at a time, stop and report |
 | USAGE.md | How to adapt that prompt, and why `CLAUDE.md` matters more than any pasted prompt |
 
