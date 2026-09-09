@@ -802,9 +802,44 @@ If users are learning, this rises. If it does not, our central claim is not work
 | ⟨D-5⟩ | Regional pricing (§9.4) | Yes, at launch | Stripe setup |
 | ⟨D-6⟩ | Funnel targets (§10.2) | As tabled | Analytics setup |
 | ⟨D-7⟩ | Launch market | *No recommendation — you know your audience* | Pricing, legal |
-| ⟨D-8⟩ | Product name / domain | *Undecided* | Everything user-facing |
+| **D-8** | Product name / domain | **Nidan** | Everything user-facing | ✅ **DECIDED** — Nidan |
 
-**⟨D-8⟩ is worth raising explicitly.** "VPSim" is a working title. A consumer product needs a name you are willing to put on an App Store listing, and the domain should be secured before the name is used publicly.
+## D-8 — product name — ✅ DECIDED (9 September 2026)
+
+**The product is called Nidan.**
+
+*Nidān* (निदान) is Sanskrit and Hindi for **diagnosis**. Two syllables, five
+letters, spells itself after one hearing, and no awkward consonants in any
+major language.
+
+**Why a non-English word met the "must work globally" requirement.** Every
+short, meaningful English word is already taken in every worthwhile domain —
+`hunch`, `weigh`, `sift`, `pivot`, `lens`, `probe`, `trace`, `astute`,
+`cogent`, all gone, none available in `.com`. The Apple strategy — owning a
+simple concrete word — is not purchasable by a new company at a sane price.
+
+What remains is what Nokia, Toyota, Sanofi and Anki did: **a word from another
+language that reads as invented to everyone else.** Anki is Japanese for
+"memorisation" and is used daily by medical students who have never wondered
+why. Nidan is the same play, and it happens to mean exactly the right thing.
+
+The decisive property is **ownability**. "Astute" was the strongest English
+candidate — *an astute clinician* is the phrase users aspire to — but a common
+adjective cannot be trademarked in a crowded category and cannot be ranked for
+in search. That is a cost paid every year, forever.
+
+**Domains:** `nidan.app` (product) and `nidan.md` (memorable, and reads as
+"MD"). `nidan.health` also available. **`nidan.com` is taken** — as is the
+`.com` for every other candidate considered, which is the normal state of
+affairs in 2026 rather than a compromise. Linear launched on `linear.app`;
+Notion ran on `notion.so` for years.
+
+**Secure the domains before the name appears publicly.**
+
+> The rename is planned but **not yet executed** — see
+> `docs/process/RENAME_PLAN.md`. "VPSim" appears 259 times across 22 documents
+> and is also the Python package identifier, so it is done deliberately in one
+> change rather than allowed to leak.
 
 ---
 
