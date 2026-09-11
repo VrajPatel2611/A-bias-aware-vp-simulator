@@ -8,9 +8,9 @@ patching a path that no longer exists.
 
 import pytest
 
-import vpsim.api.routes as routes
-import vpsim.infra.feedback as infra_feedback
-from vpsim.infra.llm import gateway
+import nidan.api.routes as routes
+import nidan.infra.feedback as infra_feedback
+from nidan.infra.llm import gateway
 
 
 def test_the_guard_actually_blocks_a_real_client():
@@ -37,16 +37,16 @@ def test_no_unpatched_module_imports_call_llm():
     """
     import pathlib
 
-    patched = {"vpsim/infra/feedback.py", "vpsim/api/routes.py"}
+    patched = {"nidan/infra/feedback.py", "nidan/api/routes.py"}
     root = pathlib.Path(__file__).resolve().parent.parent
 
     # .as_posix(), not str(): str() uses the OS separator, so on Windows this
-    # yielded "vpsim\\api\\routes.py" and matched nothing in `patched` — every
+    # yielded "nidan\\api\\routes.py" and matched nothing in `patched` — every
     # module looked unpatched and the test failed on Windows only. Caught by the
     # Tests (Windows) CI job on its first run.
     importers = {
         py.relative_to(root).as_posix()
-        for py in (root / "vpsim").rglob("*.py")
+        for py in (root / "nidan").rglob("*.py")
         if "import call_llm" in py.read_text(encoding="utf-8")
     }
 

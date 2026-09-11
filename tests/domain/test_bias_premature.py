@@ -1,5 +1,5 @@
 """
-Premature closure — vpsim.domain.assessment.bias.detect_premature_closure.
+Premature closure — nidan.domain.assessment.bias.detect_premature_closure.
 
   P1  question_count < minimum_questions   score = max(1 - qc/min, 0.1)
   P2  required-topic coverage < 0.60       score = 1 - coverage
@@ -7,7 +7,7 @@ Premature closure — vpsim.domain.assessment.bias.detect_premature_closure.
 case_1: minimum_questions = 7, 8 required topics.
 """
 
-from vpsim.domain.assessment.bias import detect_premature_closure
+from nidan.domain.assessment.bias import detect_premature_closure
 
 ALL_TOPICS = ["pain_character", "meal_relationship", "radiation",
               "associated_symptoms", "medications", "family_history",

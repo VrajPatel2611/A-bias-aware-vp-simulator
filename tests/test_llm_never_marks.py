@@ -18,9 +18,9 @@ import copy
 
 import pytest
 
-from vpsim.domain.assessment.bias import detect_all_biases
-from vpsim.domain.assessment.clinical import evaluate_clinical
-from vpsim.domain.content.cases import CASES, get_case
+from nidan.domain.assessment.bias import detect_all_biases
+from nidan.domain.assessment.clinical import evaluate_clinical
+from nidan.domain.content.cases import CASES, get_case
 
 ANCHORED = ["Could this be a heart problem?", "Any history of angina?",
             "Should we check troponin?", "Is it cardiac pain?"]
@@ -55,7 +55,7 @@ def test_assessment_is_identical_whatever_the_model_says(case_id, monkeypatch):
     for reply in adversarial:
         from tests.fakes.llm import FakeLLM
         llm = FakeLLM([reply])
-        for site in ("vpsim.infra.feedback.call_llm", "vpsim.api.routes.call_llm"):
+        for site in ("nidan.infra.feedback.call_llm", "nidan.api.routes.call_llm"):
             monkeypatch.setattr(site, llm)
         results.append((
             copy.deepcopy(detect_all_biases(session, case)),
@@ -105,7 +105,7 @@ def test_no_assessment_module_imports_the_llm_gateway():
     root = pathlib.Path(__file__).resolve().parent.parent
     offenders = [
         py.relative_to(root).as_posix()
-        for py in (root / "vpsim" / "domain" / "assessment").rglob("*.py")
+        for py in (root / "nidan" / "domain" / "assessment").rglob("*.py")
         if "gateway" in py.read_text(encoding="utf-8")
         or "groq" in py.read_text(encoding="utf-8").lower()
     ]

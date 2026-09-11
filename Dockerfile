@@ -18,7 +18,7 @@ WORKDIR /build
 # for the image, and it can drift from pyproject.toml. Correctness wins; the
 # image is built in CI where a warm cache matters little.
 COPY pyproject.toml README.md ./
-COPY vpsim/ ./vpsim/
+COPY nidan/ ./nidan/
 
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir --prefix=/install ".[prod]"
@@ -28,16 +28,16 @@ FROM python:3.11-slim AS runtime
 
 # Never run as root. A container escape starting from uid 0 is a very different
 # incident from one starting as an unprivileged user (SECURITY_SPEC §3, T6).
-RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 vpsim
+RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 nidan
 
 WORKDIR /app
 
 # Only the installed package and its dependencies cross the stage boundary.
 # There is deliberately no second copy of the source at /app: two importable
-# copies of `vpsim` on the path shadow each other unpredictably.
+# copies of `nidan` on the path shadow each other unpredictably.
 COPY --from=builder /install /usr/local
 
-USER vpsim
+USER nidan
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -63,10 +63,10 @@ sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)
 # NO --access-logfile. Gunicorn's access log is plain text, so it breaks the
 # "JSON logs to stdout" contract (TECH_SPEC §10), duplicates the app's own
 # request log, and re-adds the /healthz probe every 30s that the app-level
-# filter exists to remove. The after_request handler in vpsim/app.py already
+# filter exists to remove. The after_request handler in nidan/app.py already
 # logs every request as JSON with correlation ids and a duration.
 #
 # --error-logfile is kept: gunicorn's own failures (worker crash, bind refused)
 # happen outside Flask and would otherwise be invisible.
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", \
-     "--error-logfile", "-", "vpsim.app:app"]
+     "--error-logfile", "-", "nidan.app:app"]

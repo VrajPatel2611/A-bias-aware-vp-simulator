@@ -16,11 +16,11 @@ services:
     # Postgres 16 with the extension already compiled and version-matched
     # (ADR-0001). Pinned to a digest-stable tag; T-045 should pin by digest.
     image: pgvector/pgvector:pg16
-    container_name: vpsim-db
+    container_name: nidan-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-vpsim}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vpsim_local_dev_only}
-      POSTGRES_DB: ${POSTGRES_DB:-vpsim}
+      POSTGRES_USER: ${POSTGRES_USER:-nidan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nidan_local_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-nidan}
       # Deterministic collation, so index ordering matches production
       # regardless of the developer's locale.
       POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
@@ -37,7 +37,7 @@ services:
       # pg_isready, not a TCP check: Postgres accepts connections during
       # initialisation and then restarts, so a port check passes too early and
       # the app races the database.
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vpsim} -d ${POSTGRES_DB:-vpsim}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nidan} -d ${POSTGRES_DB:-nidan}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -48,7 +48,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: vpsim-app
+    container_name: nidan-app
     depends_on:
       db:
         # Wait for healthy, not merely started. `started` means the container
@@ -63,7 +63,7 @@ services:
       # production sets a real secret (SECURITY_SPEC §5.1).
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-local-development-only-not-a-secret}
       # Consumed from T-012 onward; set now so compose does not change then.
-      DATABASE_URL: postgresql://${POSTGRES_USER:-vpsim}:${POSTGRES_PASSWORD:-vpsim_local_dev_only}@db:5432/${POSTGRES_DB:-vpsim}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nidan}:${POSTGRES_PASSWORD:-nidan_local_dev_only}@db:5432/${POSTGRES_DB:-nidan}
     ports:
       - "${APP_PORT:-8000}:8000"
     restart: unless-stopped

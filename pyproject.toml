@@ -1,5 +1,5 @@
 [project]
-name = "vpsim"
+name = "nidan"
 version = "0.2.0"
 description = "A bias-aware virtual patient simulator for clinical reasoning training"
 requires-python = ">=3.11"
@@ -26,17 +26,17 @@ dev = [
 prod = ["gunicorn>=22"]
 
 [project.scripts]
-vpsim = "vpsim.__main__:main"
+nidan = "nidan.__main__:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["vpsim*"]
+include = ["nidan*"]
 
 [tool.setuptools.package-data]
-vpsim = ["web/templates/*.html", "web/static/*"]
+nidan = ["web/templates/*.html", "web/static/*"]
 
 [tool.ruff]
 line-length = 100
@@ -60,15 +60,15 @@ testpaths = ["tests"]
 markers = ["slow: excluded from the default run"]
 # Coverage is enforced on domain/ only. Chasing it on I/O glue produces tests
 # that assert mocks (TECH_SPEC §12).
-addopts = "--cov=vpsim.domain --cov-report=term-missing --cov-fail-under=90"
+addopts = "--cov=nidan.domain --cov-report=term-missing --cov-fail-under=90"
 
 # Layering contract (ADR-0009), enforced in CI by T-004.
 # domain/ is pure: it must not reach into infrastructure or the web layer.
 [tool.importlinter]
-root_package = "vpsim"
+root_package = "nidan"
 
 [[tool.importlinter.contracts]]
 name = "domain must not import infra or api"
 type = "forbidden"
-source_modules = ["vpsim.domain"]
-forbidden_modules = ["vpsim.infra", "vpsim.api", "vpsim.app"]
+source_modules = ["nidan.domain"]
+forbidden_modules = ["nidan.infra", "nidan.api", "nidan.app"]

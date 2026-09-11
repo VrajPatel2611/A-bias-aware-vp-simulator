@@ -69,7 +69,7 @@ pytest
 **Day to day** — fastest, auto-reloads when you edit a file:
 
 ```
-python -m vpsim
+python -m nidan
 ```
 
 Then open http://localhost:8000
@@ -112,7 +112,7 @@ surprised.
 | `pytest` | all 293 tests, plus the ≥90% coverage gate on `domain/` | ~8 s |
 | `ruff check .` | style and common mistakes | <1 s |
 | `ruff check . --fix` | the same, fixing what it can | <1 s |
-| `mypy vpsim/domain --strict` | types, on the domain layer only | ~5 s |
+| `mypy nidan/domain --strict` | types, on the domain layer only | ~5 s |
 | `lint-imports` | the ADR-0009 layering contract | ~1 s |
 | `pip-audit --skip-editable` | known vulnerabilities in dependencies | ~10 s |
 | `python validate_detectors.py` | **detector accuracy — must stay ≥ 94%** | ~2 s |
@@ -253,7 +253,7 @@ docker compose ps
 What is running, and whether it is healthy.
 
 ```
-docker compose exec db psql -U vpsim -d vpsim
+docker compose exec db psql -U nidan -d nidan
 ```
 A SQL prompt inside the database container. `\dx` lists extensions, `\q` quits.
 
@@ -312,7 +312,7 @@ lsof -nP -iTCP:5432 -sTCP:LISTEN
 
 You are not in the project directory. `cd ~/Desktop/A-bias-aware-vp-simulator`
 
-### `ERROR: Package 'vpsim' requires a different Python: 3.9.6 not in '>=3.11'`
+### `ERROR: Package 'nidan' requires a different Python: 3.9.6 not in '>=3.11'`
 
 You are using the system Python instead of the virtual environment.
 
@@ -322,7 +322,7 @@ source venv/bin/activate
 
 Or call the venv's interpreter directly: `venv/bin/python`, `venv/bin/pip`.
 
-### `ModuleNotFoundError: No module named 'vpsim'`
+### `ModuleNotFoundError: No module named 'nidan'`
 
 The package is not installed in the active environment.
 
@@ -344,7 +344,7 @@ Restore files with `git checkout` rather than `cp` and this does not happen.
 ### `FAIL: detector accuracy 92.6% is below the required 94%`
 
 A change degraded the detectors. **Do not lower the threshold.** Look at what
-you changed in `vpsim/domain/assessment/` or `vpsim/domain/content/cases.py`.
+you changed in `nidan/domain/assessment/` or `nidan/domain/content/cases.py`.
 `docs/detector_validation.md` shows which transcripts now fail.
 
 ### A case invariant fails (C-1 … C-9)
@@ -362,7 +362,7 @@ Pin these five up somewhere:
 
 ```
 source venv/bin/activate
-python -m vpsim
+python -m nidan
 pytest
 python validate_detectors.py
 docker compose up --build

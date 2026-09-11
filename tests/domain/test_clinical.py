@@ -1,5 +1,5 @@
 """
-Clinical scoring — vpsim.domain.assessment.clinical.
+Clinical scoring — nidan.domain.assessment.clinical.
 
 Diagnosis classification and workup coverage. Separate from bias detection: a
 learner can reason poorly and still be right, and the product reports both.
@@ -9,7 +9,7 @@ other — rather than a boolean, because "wrong" and "wrong in the way this case
 was designed to catch" are different findings.
 """
 
-from vpsim.domain.assessment.clinical import (
+from nidan.domain.assessment.clinical import (
     assess_diagnosis,
     assess_examinations,
     assess_investigations,

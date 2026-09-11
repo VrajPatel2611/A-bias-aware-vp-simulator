@@ -18,8 +18,8 @@ import logging
 import sys
 from typing import Any
 
-from vpsim.infra.telemetry import context
-from vpsim.infra.telemetry.redaction import safe_extra, scrub
+from nidan.infra.telemetry import context
+from nidan.infra.telemetry.redaction import safe_extra, scrub
 
 # Attributes LogRecord always carries. Anything else was passed as `extra` and
 # belongs in the output.

@@ -12,7 +12,7 @@ Pedagogical constraints (PRD P1):
   - coach the process, not the answer
 """
 
-from vpsim.domain.types import Case, ClinicalEval, Session
+from nidan.domain.types import Case, ClinicalEval, Session
 
 _FEEDBACK_SYSTEM_INSTRUCTION = """You are a clinical tutor giving feedback to a \
 medical student after a virtual-patient history, examination and investigation \

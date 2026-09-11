@@ -8,6 +8,10 @@
 > They are deliberately not rewritten. Editing them would make the record claim
 > that Nidan was built before Nidan existed, and the value of a build log is
 > that it says what actually happened.
+>
+> The same applies to **file paths**. These logs say `vpsim/domain/...`; the
+> package was renamed to `nidan/` on the same day. `BUILD_PLAN.md` carries the
+> current paths — it is the forward-looking contract. This folder is the record.
 
 `docs/spec/` says **what we are going to build and why**. It is written before
 the code and it is the contract.

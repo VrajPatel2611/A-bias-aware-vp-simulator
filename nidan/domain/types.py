@@ -12,7 +12,7 @@ event log. Naming the shape here means that change has one place to start.
 
 from typing import Any, TypedDict
 
-# A clinical case definition from vpsim.domain.content.cases.
+# A clinical case definition from nidan.domain.content.cases.
 Case = dict[str, Any]
 
 # The short {id, title, intro} form used for case listings.
@@ -40,5 +40,5 @@ class DetectorResult(TypedDict):
 # {"anchoring": DetectorResult, "premature_closure": ..., "confirmation_bias": ...}
 BiasResults = dict[str, DetectorResult]
 
-# Output of vpsim.domain.assessment.clinical.evaluate_clinical.
+# Output of nidan.domain.assessment.clinical.evaluate_clinical.
 ClinicalEval = dict[str, Any]

@@ -18,7 +18,7 @@ class FakeLLMError(Exception):
 
 class FakeLLM:
     """
-    Scriptable stand-in for vpsim.infra.llm.gateway.call_llm.
+    Scriptable stand-in for nidan.infra.llm.gateway.call_llm.
 
         llm = FakeLLM(["Doctor, my chest hurts."])
         llm("...", "...")           -> "Doctor, my chest hurts."

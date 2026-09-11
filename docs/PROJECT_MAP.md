@@ -19,7 +19,7 @@ A-bias-aware-vp-simulator/
 ├── CLAUDE.md ★             project context, auto-loaded by Claude every session
 ├── README.md               GitHub landing page
 │
-├── vpsim/ ★                THE APPLICATION
+├── nidan/ ★                THE APPLICATION
 │   ├── domain/             pure logic — no Flask, no Groq, no I/O
 │   │   ├── content/cases.py      5 clinical cases, 27 exams, 86 investigations
 │   │   ├── assessment/

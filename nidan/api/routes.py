@@ -3,7 +3,7 @@ HTTP routes.
 
 The web layer: parses requests, calls the domain, renders responses. It holds no
 business logic of its own — anything that decides something belongs in
-vpsim.domain (ADR-0009).
+nidan.domain (ADR-0009).
 
 NOTE (BUILD_PLAN T-030): these server-rendered routes are the prototype. They are
 replaced by a JSON API under /v1 once the Next.js client exists (ADR-0006). The
@@ -22,26 +22,26 @@ from flask import (
     url_for,
 )
 
-from vpsim.domain.assessment.bias import detect_all_biases
-from vpsim.domain.assessment.clinical import evaluate_clinical
-from vpsim.domain.content.cases import (
+from nidan.domain.assessment.bias import detect_all_biases
+from nidan.domain.assessment.clinical import evaluate_clinical
+from nidan.domain.content.cases import (
     MASTER_EXAMINATIONS,
     MASTER_INVESTIGATIONS,
     get_all_cases,
     get_case,
 )
-from vpsim.domain.session import (
+from nidan.domain.session import (
     create_session,
     get_session_summary,
     record_exam,
     record_investigation,
     update_session,
 )
-from vpsim.infra.clock import utc_now_iso
-from vpsim.infra.feedback import generate_feedback
-from vpsim.infra.llm.gateway import call_llm
-from vpsim.infra.session_store import SESSION_STORE
-from vpsim.infra.storage import save_session_file
+from nidan.infra.clock import utc_now_iso
+from nidan.infra.feedback import generate_feedback
+from nidan.infra.llm.gateway import call_llm
+from nidan.infra.session_store import SESSION_STORE
+from nidan.infra.storage import save_session_file
 
 bp = Blueprint("web", __name__)
 

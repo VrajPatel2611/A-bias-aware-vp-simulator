@@ -1,5 +1,5 @@
 """
-Anchoring detector — vpsim.domain.assessment.bias.detect_anchoring.
+Anchoring detector — nidan.domain.assessment.bias.detect_anchoring.
 
 Two OR'd rules (TECH_SPEC §4.3):
   A1  ≥ 4 questions AND anchor concentration > 0.60   score = concentration
@@ -10,7 +10,7 @@ a threshold change fails the test that encodes that threshold and no others.
 """
 
 
-from vpsim.domain.assessment.bias import detect_anchoring
+from nidan.domain.assessment.bias import detect_anchoring
 
 CARDIAC = "Could this be a heart problem?"
 CARDIAC_2 = "Any history of angina?"

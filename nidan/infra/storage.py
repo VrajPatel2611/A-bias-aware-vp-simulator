@@ -11,7 +11,7 @@ keeps working during the restructure.
 import json
 import os
 
-from vpsim.infra.clock import utc_now_iso
+from nidan.infra.clock import utc_now_iso
 
 
 def count_prior_sessions(sessions_dir, participant_id):

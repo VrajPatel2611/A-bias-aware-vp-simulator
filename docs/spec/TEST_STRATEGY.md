@@ -217,7 +217,7 @@ visits every node in it. The two node types matter because Python has two import
 forms:
 
 - `import os` → an `ast.Import` node, module names in `.names`
-- `from vpsim.infra import x` → an `ast.ImportFrom` node, module in `.module`
+- `from nidan.infra import x` → an `ast.ImportFrom` node, module in `.module`
 
 **Why parse instead of grepping for the word "import".** `grep` would match the
 word inside a comment, a docstring, or a string literal, and would miss an
@@ -234,7 +234,7 @@ for reasons that have nothing to do with layering.
 **Test 1 — no upward imports.**
 
 ```python
-FORBIDDEN = ("vpsim.infra", "vpsim.api", "vpsim.app")
+FORBIDDEN = ("nidan.infra", "nidan.api", "nidan.app")
 
 def test_domain_does_not_import_infra_or_api():
     violations = []
@@ -255,8 +255,8 @@ everything:
 
 ```
 AssertionError: domain layer must stay pure:
-  domain/session.py imports vpsim.infra.storage
-  domain/feedback.py imports vpsim.infra.llm.gateway
+  domain/session.py imports nidan.infra.storage
+  domain/feedback.py imports nidan.infra.llm.gateway
 ```
 
 The message names the file and the offending import. A test whose failure
@@ -272,7 +272,7 @@ def test_domain_has_no_flask_dependency():
 ```
 
 This catches something the first test cannot. A file could import `flask`
-directly without going through `vpsim.api`, and test 1 would pass. But a domain
+directly without going through `nidan.api`, and test 1 would pass. But a domain
 module that needs a web framework is misfiled by definition, and one that
 imports `groq` is a direct threat to **P1 — the LLM never marks**.
 
@@ -287,8 +287,8 @@ to protect. They are not redundant.
 [[tool.importlinter.contracts]]
 name = "domain must not import infra or api"
 type = "forbidden"
-source_modules = ["vpsim.domain"]
-forbidden_modules = ["vpsim.infra", "vpsim.api", "vpsim.app"]
+source_modules = ["nidan.domain"]
+forbidden_modules = ["nidan.infra", "nidan.api", "nidan.app"]
 ```
 
 ```
