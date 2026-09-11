@@ -40,8 +40,12 @@ def test_no_unpatched_module_imports_call_llm():
     patched = {"vpsim/infra/feedback.py", "vpsim/api/routes.py"}
     root = pathlib.Path(__file__).resolve().parent.parent
 
+    # .as_posix(), not str(): str() uses the OS separator, so on Windows this
+    # yielded "vpsim\\api\\routes.py" and matched nothing in `patched` — every
+    # module looked unpatched and the test failed on Windows only. Caught by the
+    # Tests (Windows) CI job on its first run.
     importers = {
-        str(py.relative_to(root))
+        py.relative_to(root).as_posix()
         for py in (root / "vpsim").rglob("*.py")
         if "import call_llm" in py.read_text(encoding="utf-8")
     }

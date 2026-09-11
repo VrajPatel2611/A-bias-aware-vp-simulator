@@ -31,7 +31,7 @@ def test_domain_does_not_import_infra_or_api():
     for py in DOMAIN.rglob("*.py"):
         for mod in _imports(py):
             if mod.startswith(FORBIDDEN):
-                violations.append(f"{py.relative_to(DOMAIN.parent)} imports {mod}")
+                violations.append(f"{py.relative_to(DOMAIN.parent).as_posix()} imports {mod}")
     assert not violations, "domain layer must stay pure:\n  " + "\n  ".join(violations)
 
 
@@ -41,5 +41,5 @@ def test_domain_has_no_flask_dependency():
     for py in DOMAIN.rglob("*.py"):
         for mod in _imports(py):
             if mod.split(".")[0] in ("flask", "groq"):
-                violations.append(f"{py.relative_to(DOMAIN.parent)} imports {mod}")
+                violations.append(f"{py.relative_to(DOMAIN.parent).as_posix()} imports {mod}")
     assert not violations, "domain must not depend on the framework or a provider:\n  " + "\n  ".join(violations)

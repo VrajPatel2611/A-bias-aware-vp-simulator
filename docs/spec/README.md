@@ -1,4 +1,4 @@
-# VPSim — Build Specification
+# Nidan — Build Specification
 
 Six documents forming the build contract. Written to minimise rework: decisions
 settled here rather than mid-implementation.

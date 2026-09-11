@@ -1,5 +1,14 @@
 # Build log — what this folder is
 
+> **A note on the name.** The product was renamed from **VPSim** to **Nidan** on
+> 11 September 2026 (`PRD` D-8). Logs T-001 to T-007 describe work done before
+> that and still use the working title — including quoted error output and
+> command transcripts.
+>
+> They are deliberately not rewritten. Editing them would make the record claim
+> that Nidan was built before Nidan existed, and the value of a build log is
+> that it says what actually happened.
+
 `docs/spec/` says **what we are going to build and why**. It is written before
 the code and it is the contract.
 

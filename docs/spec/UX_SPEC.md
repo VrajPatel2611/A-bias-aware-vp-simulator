@@ -1,4 +1,4 @@
-# VPSim — UX Specification
+# Nidan — UX Specification
 
 ---
 
@@ -85,7 +85,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim UX Specification |
+| **Document** | Nidan UX Specification |
 | **Version** | v1.0 |
 | **Status** | Draft |
 | **Owners** | Vraj Patel, Yogesh Bagotia |
@@ -271,7 +271,7 @@ Every component the build needs. Anything not listed requires a spec addition.
 `PRD` §5.2 excludes phone-sized consultation. On `sm`, S-09 and S-10 show a blocking message rather than a degraded layout:
 
 > **Best on a larger screen**
-> A consultation needs room for the patient, your questions, and the test panel side by side. Open VPSim on a tablet or computer to start a case.
+> A consultation needs room for the patient, your questions, and the test panel side by side. Open Nidan on a tablet or computer to start a case.
 > *You can still review your past feedback and progress here.*
 > `[ View my progress ]`
 
@@ -287,7 +287,7 @@ Every component the build needs. Anything not listed requires a spec addition.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  VPSim        Dashboard   History   Progress          ⚙  [AV]   │
+│  Nidan        Dashboard   History   Progress          ⚙  [AV]   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -344,7 +344,7 @@ Supabase issues and validates credentials (`ADR-0002`); our application owns the
 ### 6.1.1 End-to-end flow — email signup
 
 ```
-Browser                  Next.js server           Supabase Auth        VPSim API
+Browser                  Next.js server           Supabase Auth        Nidan API
    │                          │                        │                   │
    │─ submit email + pw ─────►│                        │                   │
    │                          │─ signUp() ────────────►│                   │
@@ -364,7 +364,7 @@ Browser                  Next.js server           Supabase Auth        VPSim API
 ### 6.1.2 OAuth flow — Google / Apple
 
 ```
-Browser                Next.js            Provider           Supabase         VPSim API
+Browser                Next.js            Provider           Supabase         Nidan API
    │─ click Google ──────►│                  │                  │                │
    │                      │─ redirect ──────►│                  │                │
    │◄─────────── consent screen ─────────────│                  │                │
@@ -458,7 +458,7 @@ Sign out is **not** offered as a confirmation dialog — it is trivially reversi
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  VPSim                                    Try a case    Log in   │
+│  Nidan                                    Try a case    Log in   │
 ├──────────────────────────────────────────────────────────────────┤
 │     Getting the diagnosis right isn't                            │
 │     the same as reasoning it right.                              │
@@ -478,7 +478,7 @@ Sign out is **not** offered as a confirmation dialog — it is trivially reversi
 │   HOW IT WORKS — Interview · Investigate · Reflect               │
 ├──────────────────────────────────────────────────────────────────┤
 │   About · Privacy · Terms · Contact                              │
-│   VPSim is an educational simulation. Not for clinical use.      │
+│   Nidan is an educational simulation. Not for clinical use.      │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -684,7 +684,7 @@ Both steps have a `Skip` text link. Skipping never blocks usage (FR-2.7).
 ### Copy
 | Element | Text |
 |---|---|
-| H1 | Welcome to VPSim |
+| H1 | Welcome to Nidan |
 | Sub | Two quick questions so we can pitch cases at the right level. |
 | Final CTA | Start my first case |
 
@@ -702,7 +702,7 @@ Both steps have a `Skip` text link. Skipping never blocks usage (FR-2.7).
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  VPSim     Dashboard  History  Progress    3 of 3 left    ⚙ [AV] │
+│  Nidan     Dashboard  History  Progress    3 of 3 left    ⚙ [AV] │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │   Good evening, Aarav                                            │
@@ -882,7 +882,7 @@ Selecting an item appends a result card to the **Ordered** tab and switches to i
 On detection of patterns suggesting real patient data (identifiers, dates of birth, hospital numbers, named individuals with clinical detail):
 
 > **Please don't enter real patient information**
-> VPSim is a training simulation with synthetic patients. It isn't secure or appropriate for real patient data, and it can't give clinical advice.
+> Nidan is a training simulation with synthetic patients. It isn't secure or appropriate for real patient data, and it can't give clinical advice.
 > `[ I understand ]`
 
 Question is discarded, not sent. Event logged for admin review.
@@ -1123,7 +1123,7 @@ The account area is where a user manages their relationship with the product. It
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  VPSim     Dashboard  History  Progress              ⚙  [AV]     │
+│  Nidan     Dashboard  History  Progress              ⚙  [AV]     │
 ├──────────────┬───────────────────────────────────────────────────┤
 │              │                                                   │
 │  Profile     │   Profile                                         │
@@ -1290,7 +1290,7 @@ Off by default (`PRD` FR-11.5). This screen must be readable by someone who has 
 ┌────────────────────────────────────────────────┐
 │  Help improve clinical reasoning research      │
 │                                                │
-│  VPSim began as a research project. With your  │
+│  Nidan began as a research project. With your  │
 │  permission we include your anonymised results │
 │  in studies of how doctors learn to reason.    │
 │                                                │
@@ -1518,7 +1518,7 @@ Admin uses the **same authentication** as the product (`ADR-0002`) with `role = 
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
-│ VPSim Admin    Cases  Content  AI Ops  Users  System      admin@… ▾   │
+│ Nidan Admin    Cases  Content  AI Ops  Users  System      admin@… ▾   │
 ├──────────────┬────────────────────────────────────────────────────────┤
 │              │                                                        │
 │  Case bank   │   {screen content}                                     │

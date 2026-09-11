@@ -1,4 +1,4 @@
-# VPSim — Architecture Decision Records
+# Nidan — Architecture Decision Records
 
 One decision per record. **Accepted ADRs are never edited** — they are superseded by a new record.
 

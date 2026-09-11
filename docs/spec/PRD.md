@@ -1,4 +1,4 @@
-# VPSim — Product Requirements Document
+# Nidan — Product Requirements Document
 
 ---
 
@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim Product Requirements Document |
+| **Document** | Nidan Product Requirements Document |
 | **Version** | v1.0 |
 | **Status** | Draft — awaiting sign-off on §9 pricing and §3.1 persona |
 | **Owners** | Vraj Patel, Yogesh Bagotia |
@@ -16,7 +16,7 @@
 
 ## 1.1 Purpose of this document
 
-This PRD defines **what** VPSim v1 is and **why**. It does not describe implementation — that lives in `TECH_SPEC.md`.
+This PRD defines **what** Nidan v1 is and **why**. It does not describe implementation — that lives in `TECH_SPEC.md`.
 
 It exists to serve as a **build contract**. Every functional requirement in §6 carries acceptance criteria and edge cases, so that implementation is mechanical and disagreements surface here rather than mid-build.
 
@@ -84,10 +84,20 @@ Our pilot demonstrated the observation is possible: **five of eight participants
 
 # 3. Users
 
-## 3.1 Primary persona ⟨DECIDE⟩
+## 3.1 Primary persona — ✅ DECIDED (9 September 2026)
 
-> **Recommendation: clinical-phase medical students and early trainees (years 3–5, plus interns and first-year residents).**
-> Rationale: this is who we validated with (pilot participants were years 2–5), it is the group whose reasoning habits are still forming, and it is the group already paying for study tools. Confirm or override.
+> **DECIDED: clinical-phase medical students and early trainees (years 3–5, plus
+> interns and first-year residents).**
+>
+> Rationale: this is who we validated with — pilot participants were years 2–5 —
+> so the research and the product stay aligned. Choosing a persona the pilot
+> never tested would have weakened the link between the paper and the product.
+> It is also the group whose reasoning habits are still forming, and the group
+> already paying for study tools.
+>
+> **Consequence for authoring:** cases 6–10 are pitched at clinical-phase
+> reasoning — undifferentiated acute presentations where the obvious answer is
+> wrong, not rare-disease recall.
 
 ### Persona A — "Aarav", 4th-year medical student
 
@@ -214,13 +224,19 @@ Recording these prevents mid-build argument.
 
 Mobile apps · Case Factory · embeddings + threshold calibration · case variants · additional specialties · post-session confidence rating.
 
-## 5.4 Launch content ⟨DECIDE⟩
+## 5.4 Launch content — ✅ DECIDED (9 September 2026)
 
 > **Recommendation: 10 cases at launch, all in general internal medicine / acute presentations.**
 >
 > Rationale: a free user completing 3/month needs ~3 months before exhausting the bank; a Pro user needs enough to feel unlimited. Depth in one domain beats breadth across five — it makes the product legible ("the acute-presentation trainer") and keeps the master menu coherent.
 >
-> You have 5. **Five more must be authored before launch** — this is on the critical path and is content work, not engineering.
+> **DECIDED: 10.** You have 5, so **five more must be authored and clinically
+> reviewed before launch.**
+>
+> This is the critical path (`BUILD_PLAN` §11.1) and it is content work, not
+> engineering — no task in the build plan produces a case. It can and should
+> start before the case editor exists (T-021), because the editor unblocks
+> *review*, not *drafting*.
 
 ---
 
@@ -673,7 +689,7 @@ Detailed layouts, states, and copy live in `UX_SPEC.md`. This is the complete li
 
 # 9. Monetization
 
-## 9.1 Tiers ⟨DECIDE⟩
+## 9.1 Tiers — ✅ DECIDED (9 September 2026)
 
 > **Recommendation**
 
@@ -686,7 +702,14 @@ Detailed layouts, states, and copy live in `UX_SPEC.md`. This is the complete li
 | Retry a specific case | No | No | Yes |
 | Data export | No | Yes | Yes |
 
-**Why 3 per month for free:** enough to experience the product and see one trend data point; not enough to satisfy a user preparing for exams. If it is too generous, conversion collapses; too tight and the free tier fails as a funnel. 3 is a defensible starting point — **instrument it and adjust** (§10).
+**DECIDED: 3 per month.** Enough to experience the product and see one trend
+data point; not enough to satisfy a user preparing for exams. Too generous and
+conversion collapses; too tight and the free tier fails as a funnel.
+
+**This is a starting point, not a conclusion.** Nobody guesses this correctly.
+It is deliberately a configured value rather than a schema constant — the limit
+is a `COUNT` query compared against config (`DATA_MODEL` §11.2), so changing it
+is a config change and not a migration. **Instrument it and adjust** (§10).
 
 **Why full feedback on free:** the feedback *is* the product. Crippling it would mean free users never understand what they would be paying for.
 
@@ -768,18 +791,55 @@ If users are learning, this rises. If it does not, our central claim is not work
 
 # 11. Open decisions
 
-| # | Decision | Recommendation | Blocks |
-|---|---|---|---|
-| ⟨D-1⟩ | Primary persona (§3.1) | Clinical-phase students + early trainees | UX tone, case difficulty |
-| ⟨D-2⟩ | Launch case count (§5.4) | 10 — **5 more to author** | Launch date |
-| ⟨D-3⟩ | Free tier limit (§9.1) | 3 per month | `DATA_MODEL`, gating code |
+**Decided 9 September 2026: D-1, D-2, D-3.** The remaining five are open.
+
+| # | Decision | Recommendation | Blocks | Status |
+|---|---|---|---|---|
+| **D-1** | Primary persona (§3.1) | Clinical-phase students + early trainees | UX tone, case difficulty | ✅ **DECIDED** — recommendation accepted |
+| **D-2** | Launch case count (§5.4) | 10 — **5 more to author** | Launch date | ✅ **DECIDED** — 10 |
+| **D-3** | Free tier limit (§9.1) | 3 per month | gating code (T-017) | ✅ **DECIDED** — 3/month, instrument and adjust |
 | ⟨D-4⟩ | Price point (§9.2) | $8–12/mo, $60–80/yr | Stripe setup |
 | ⟨D-5⟩ | Regional pricing (§9.4) | Yes, at launch | Stripe setup |
 | ⟨D-6⟩ | Funnel targets (§10.2) | As tabled | Analytics setup |
 | ⟨D-7⟩ | Launch market | *No recommendation — you know your audience* | Pricing, legal |
-| ⟨D-8⟩ | Product name / domain | *Undecided* | Everything user-facing |
+| **D-8** | Product name / domain | **Nidan** | Everything user-facing | ✅ **DECIDED** — Nidan |
 
-**⟨D-8⟩ is worth raising explicitly.** "VPSim" is a working title. A consumer product needs a name you are willing to put on an App Store listing, and the domain should be secured before the name is used publicly.
+## D-8 — product name — ✅ DECIDED (9 September 2026)
+
+**The product is called Nidan.**
+
+*Nidān* (निदान) is Sanskrit and Hindi for **diagnosis**. Two syllables, five
+letters, spells itself after one hearing, and no awkward consonants in any
+major language.
+
+**Why a non-English word met the "must work globally" requirement.** Every
+short, meaningful English word is already taken in every worthwhile domain —
+`hunch`, `weigh`, `sift`, `pivot`, `lens`, `probe`, `trace`, `astute`,
+`cogent`, all gone, none available in `.com`. The Apple strategy — owning a
+simple concrete word — is not purchasable by a new company at a sane price.
+
+What remains is what Nokia, Toyota, Sanofi and Anki did: **a word from another
+language that reads as invented to everyone else.** Anki is Japanese for
+"memorisation" and is used daily by medical students who have never wondered
+why. Nidan is the same play, and it happens to mean exactly the right thing.
+
+The decisive property is **ownability**. "Astute" was the strongest English
+candidate — *an astute clinician* is the phrase users aspire to — but a common
+adjective cannot be trademarked in a crowded category and cannot be ranked for
+in search. That is a cost paid every year, forever.
+
+**Domains:** `nidan.app` (product) and `nidan.md` (memorable, and reads as
+"MD"). `nidan.health` also available. **`nidan.com` is taken** — as is the
+`.com` for every other candidate considered, which is the normal state of
+affairs in 2026 rather than a compromise. Linear launched on `linear.app`;
+Notion ran on `notion.so` for years.
+
+**Secure the domains before the name appears publicly.**
+
+> The rename is planned but **not yet executed** — see
+> `docs/process/RENAME_PLAN.md`. "Nidan" appears 259 times across 22 documents
+> and is also the Python package identifier, so it is done deliberately in one
+> change rather than allowed to leak.
 
 ---
 

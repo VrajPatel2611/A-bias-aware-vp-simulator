@@ -12,7 +12,7 @@ def main() -> None:
     # http://..." banner through that same logger at INFO. Without this the
     # server starts correctly but never tells you where it is.
     url = f"http://127.0.0.1:{settings.PORT}"
-    print(f" * VPSim running on {url}", flush=True)
+    print(f" * Nidan running on {url}", flush=True)
     print(" * Press CTRL+C to quit", flush=True)
 
     app.run(debug=settings.DEBUG, port=settings.PORT)

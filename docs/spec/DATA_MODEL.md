@@ -1,4 +1,4 @@
-# VPSim — Data Model
+# Nidan — Data Model
 
 ---
 
@@ -89,7 +89,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim Data Model |
+| **Document** | Nidan Data Model |
 | **Version** | v1.0 |
 | **Status** | Draft |
 | **Database** | PostgreSQL 16 + `pgvector`, hosted on Supabase (`ADR-0001`) |
