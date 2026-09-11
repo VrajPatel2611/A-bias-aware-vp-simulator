@@ -140,11 +140,30 @@ python scripts/build_status.py     # regenerate docs/build-log/STATUS.md
 
 ---
 
-## Decisions still open
+## Decisions
 
-8 items marked `⟨DECIDE⟩` in `PRD.md` §11 — free-tier limit, price, launch case
-count, product name. Current specs are built on the recommendations there.
-**Confirm before finalising the schema**, since tier limits become gating code.
+**All 8 original `⟨DECIDE⟩` items are settled** (`PRD` §11, decided 9–11 Sep 2026):
+
+| | |
+|---|---|
+| Persona | Clinical-phase students and early trainees, years 3–5 |
+| Launch cases | 10 — **5 still to author**, the critical path |
+| Free tier | 3 sessions/month, configured not schema |
+| Price | $8–12/mo, $60–80/yr — exact figure at T-041 |
+| Regional pricing | Yes, at launch |
+| Funnel targets | Accepted as provisional hypotheses |
+| Launch market | **Global English-speaking** — settles Stripe, not the DB region |
+| Product name | **Nidan** |
+
+**Two questions remain open, both raised by the global launch decision:**
+
+- **⟨D-9⟩ clinical convention** (`PRD` §5.5) — the cases use `mmol/L` and
+  British drug names; US students use `mg/dL` and different names. Settle
+  **before authoring cases 6–10**
+- **Supabase region** (`SECURITY_SPEC` S-4) — one database, one jurisdiction,
+  GDPR consequences. Settle before launch
+
+Neither blocks T-010: the schema does not encode a price, a limit or a region.
 
 ---
 
