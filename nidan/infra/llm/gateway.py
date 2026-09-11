@@ -6,7 +6,7 @@ through here so that retry, provider selection and (later) cost accounting have
 one home.
 
 Design rule (PR-1, ADR-0005): the model generates text only. It never produces a
-flag, a score or a verdict. Those are computed by vpsim.domain.assessment from
+flag, a score or a verdict. Those are computed by nidan.domain.assessment from
 the learner's own actions, which is what makes results reproducible.
 
 NOTE (BUILD_PLAN T-031): this will gain per-purpose model routing, a circuit
@@ -19,7 +19,7 @@ import time
 
 from groq import Groq
 
-from vpsim.config import settings
+from nidan.config import settings
 
 _client = None
 

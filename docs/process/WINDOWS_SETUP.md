@@ -19,8 +19,8 @@ how you work from now on:
 through a branch and a pull request, and six automated checks must pass before
 it can merge. §5 covers the workflow.
 
-**The code moved.** The flat prototype is now a `vpsim/` package with three
-layers. `python app.py` no longer exists — it is `python -m vpsim`.
+**The code moved.** The flat prototype is now a `nidan/` package with three
+layers. `python app.py` no longer exists — it is `python -m nidan`.
 
 Read [`docs/PROJECT_MAP.md`](../PROJECT_MAP.md) first; it is the annotated tree
 of the whole repository and takes ten minutes.
@@ -214,7 +214,7 @@ Must print `PASS: detector accuracy 94.4%`. This is the research result, and CI
 fails the build if it drops below 94%.
 
 ```powershell
-python -m vpsim
+python -m nidan
 ```
 
 Open http://localhost:8000 — five cases. `Ctrl+C` to stop.
@@ -370,7 +370,7 @@ validation fails, something changed the instrument the paper reports.
 |---|---|
 | `python` is not recognised | Python not on PATH — reinstall and tick "Add to PATH", or use `py` |
 | `running scripts is disabled` | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
-| `ModuleNotFoundError: vpsim` | venv not activated (no `(venv)` in prompt), or `pip install -e ".[dev]"` not run |
+| `ModuleNotFoundError: nidan` | venv not activated (no `(venv)` in prompt), or `pip install -e ".[dev]"` not run |
 | `requires a different Python: 3.9` | wrong Python — delete `venv\`, then recreate with a 3.11+ version |
 | `No suitable Python runtime found` | that version is not installed. `py -0` lists what you have |
 | `docker: command not found` | Docker Desktop not installed, or not launched |
@@ -391,7 +391,7 @@ macOS; the differences that matter are:
 | `cp .env.example .env` | `Copy-Item .env.example .env` |
 | `rm -rf x` | `Remove-Item -Recurse -Force x` |
 
-Everything after activation — `pytest`, `ruff`, `python -m vpsim`, `git`,
+Everything after activation — `pytest`, `ruff`, `python -m nidan`, `git`,
 `docker compose` — is identical on both.
 
 ---

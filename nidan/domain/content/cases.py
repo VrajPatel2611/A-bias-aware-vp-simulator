@@ -18,7 +18,7 @@ Case list:
   case_5: Aisha Khan,   21F — Vomiting + abdo pain — DKA vs Gastroenteritis
 """
 
-from vpsim.domain.types import Case, CaseSummary
+from nidan.domain.types import Case, CaseSummary
 
 CASES = {
 

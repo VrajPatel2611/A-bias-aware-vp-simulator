@@ -7,7 +7,7 @@ move. Behavioural tests for the domain layer arrive with T-002.
 
 import pytest
 
-from vpsim.app import create_app
+from nidan.app import create_app
 
 
 @pytest.fixture

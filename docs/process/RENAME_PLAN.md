@@ -1,6 +1,6 @@
 # Rename plan — VPSim → Nidan
 
-**Status: Phase A executed, 11 September 2026. Phase B not done and may never be.**
+**Status: Phase A and Phase B both executed, 11 September 2026. The rename is complete.**
 
 D-8 was decided on 9 September 2026 (`PRD` §11). This is the plan for making it
 real in one deliberate change rather than letting the new name leak in gradually
@@ -126,9 +126,14 @@ already internally consistent when its name changes.
 
 ---
 
-## 4 · Phase B — the package (optional, later)
+## 4 · Phase B — the package — ✅ DONE (11 September 2026)
 
-**Effort: one day. Risk: medium. Do not bundle with anything else.**
+**Actual effort: under an hour. Risk turned out low**, because the test suite
+made it verifiable: 293 tests, the layering contract, mypy strict and the
+detector gate all had to agree before it could be called finished.
+
+Done immediately after Phase A rather than "later, or never" as this document
+originally recommended. The reason for the change of mind is in §4.1.
 
 Only if you decide it matters. The order is load-bearing:
 
@@ -142,13 +147,59 @@ Only if you decide it matters. The order is load-bearing:
 6. `docker-compose.yml` — container names, Postgres user and database
 7. `python -m nidan`, `pip install -e ".[dev]"`, full CI green
 
-**The database name is the trap.** Changing `POSTGRES_DB` means existing local
-volumes point at a database that no longer exists. Anyone with a running stack
-needs `docker compose down -v`, which **deletes their local data**. Harmless
-today — the app does not use the database yet. **After T-010 it would not be.**
+### 4.1 · Why it was done now rather than never
 
-That alone is an argument for doing Phase B now if it is going to be done at
-all, or accepting `vpsim` as a permanent internal name.
+The Python package rename has **no deadline** — renaming `import nidan` in 2030
+would cost exactly what it cost today. But the database name does:
+
+**Changing `POSTGRES_DB` orphans existing local volumes.** Anyone with a running
+stack needs `docker compose down -v`, which **deletes their local data**.
+Harmless on 11 September, because nothing uses the database yet. After T-010
+creates the schema and T-018 imports the pilot sessions, it becomes a
+dump-and-restore. After launch it is a production migration with downtime.
+
+So the choice was: do it while it is free, or accept `vpsim` permanently.
+
+**What made it safe:** 293 tests, an import-linter contract, mypy strict on the
+domain layer, a Docker build in CI and a detector-accuracy gate. A mechanical
+rename against that much verification is a low-risk change. It would not have
+been in a codebase without them — which is Phase 0's return on investment,
+collected.
+
+### 4.2 · What actually changed
+
+```
+git mv vpsim nidan                34 files, renames detected by git
+imports rewritten                 37 python files
+pyproject.toml                    name, console script, --cov target,
+                                  package-data, import-linter root_package
+Dockerfile                        COPY, runtime user, gunicorn target
+docker-compose.yml                container names, POSTGRES_USER,
+                                  POSTGRES_DB, DATABASE_URL, dev password
+docs                              TECH_SPEC, TEST_STRATEGY, BUILD_PLAN,
+                                  COMMANDS, WINDOWS_SETUP, PROJECT_MAP,
+                                  BRANCH_PROTECTION, .gitleaks.toml
+```
+
+**Two things that needed a human, not a regex:**
+
+`\bvpsim\b` does not match `vpsim_local_dev_only`, because `_` is a word
+character. The dev database password kept the old name until it was caught by
+reading the output rather than trusting the count.
+
+Import ordering changed. `nidan` sorts before `tests`, where `vpsim` sorted
+after, so `ruff` failed on block ordering until it was re-sorted.
+
+### 4.3 · What anyone with a running stack must do
+
+```bash
+docker compose down -v          # the volume points at a database called vpsim
+pip install -e ".[dev]"         # the editable install points at the old name
+docker compose up --build
+```
+
+The `-v` is required. Without it Postgres keeps the old `vpsim` database and the
+app connects to a database that does not exist.
 
 ---
 

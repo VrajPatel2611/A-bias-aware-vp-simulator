@@ -14,7 +14,7 @@ Each detector returns a dict:
   {detected: bool, score: float 0-1, reason: str, evidence: list}
 """
 
-from vpsim.domain.types import BiasResults, Case, DetectorResult, Session
+from nidan.domain.types import BiasResults, Case, DetectorResult, Session
 
 
 def detect_all_biases(session: Session, case_config: Case) -> BiasResults:

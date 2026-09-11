@@ -55,7 +55,7 @@
 |---|---|
 | **Document** | Nidan API Contract |
 | **Version** | v1.0 |
-| **Base URL** | `https://api.vpsim.app/v1` ⟨domain pending, `PRD` D-8⟩ |
+| **Base URL** | `https://api.nidan.app/v1` |
 | **Machine-readable** | `openapi.yaml` — **the source of truth** |
 | **Depends on** | `PRD.md` §6 · `DATA_MODEL.md` · `ADR-0002`, `ADR-0006`, `ADR-0007` |
 

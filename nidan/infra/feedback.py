@@ -8,12 +8,12 @@ The model writes prose only. It never influences a flag, a score or a verdict
 (PR-1, ADR-0005).
 """
 
-from vpsim.domain.feedback import (
+from nidan.domain.feedback import (
     _FEEDBACK_SYSTEM_INSTRUCTION,
     build_fallback_feedback,
     build_feedback_prompt,
 )
-from vpsim.infra.llm.gateway import call_llm
+from nidan.infra.llm.gateway import call_llm
 
 
 def generate_feedback(bias_results, clinical_eval, session, case_config):

@@ -17,13 +17,13 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from vpsim.domain.assessment.bias import (
+from nidan.domain.assessment.bias import (
     detect_all_biases,
     detect_anchoring,
     detect_confirmation_bias,
     detect_premature_closure,
 )
-from vpsim.domain.content.cases import CASES, get_case
+from nidan.domain.content.cases import CASES, get_case
 
 CASE_IDS = sorted(CASES)
 DETECTORS = [detect_anchoring, detect_premature_closure, detect_confirmation_bias]

@@ -76,7 +76,7 @@ fails the build below that. Do not "fix" a detector without re-running it.
 ## Repository layout
 
 ```
-vpsim/
+nidan/
   domain/               pure logic — no Flask, no Groq, no I/O
     content/cases.py      the 5 clinical cases + master exam/investigation lists
     assessment/bias.py    the three detectors  ← the core IP
@@ -115,11 +115,11 @@ reaches into `infra/` or `api/`.
 source venv/bin/activate
 pip install -e .                   # once, after cloning
 
-python -m vpsim                    # run the app (needs GROQ_API_KEY in .env)
+python -m nidan                    # run the app (needs GROQ_API_KEY in .env)
 docker compose up --build          # app + Postgres 16/pgvector on a clean machine
 pytest                             # 231 tests (see docs/spec/TEST_STRATEGY.md)
 ruff check . --fix                 # style
-mypy vpsim/domain --strict         # types (domain only)
+mypy nidan/domain --strict         # types (domain only)
 lint-imports                       # check the domain/infra/api layering contract
 python validate_detectors.py       # detector validation — must report >= 94%
 python analyze_sessions.py sessions # paired statistics over session JSON

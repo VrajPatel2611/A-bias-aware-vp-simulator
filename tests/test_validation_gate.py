@@ -21,9 +21,9 @@ SCRIPT = REPO / "validate_detectors.py"
 
 def _run(cwd=REPO):
     """
-    Run validation in `cwd`, importing the copy of vpsim that lives there.
+    Run validation in `cwd`, importing the copy of nidan that lives there.
 
-    PYTHONPATH matters: vpsim is installed editable, pointing at the real
+    PYTHONPATH matters: nidan is installed editable, pointing at the real
     repository, so without it a subprocess in a copied tree would import the
     real detectors and the degraded copy would appear to pass.
     """
@@ -74,7 +74,7 @@ def test_fails_when_a_detector_is_degraded(tmp_path):
                                       "docs", "sessions", "*.egg-info"),
     )
 
-    bias = work / "vpsim" / "domain" / "assessment" / "bias.py"
+    bias = work / "nidan" / "domain" / "assessment" / "bias.py"
     source = bias.read_text(encoding="utf-8")
     assert "if concentration > 0.60:" in source, "rule A1 has moved — update this test"
     bias.write_text(source.replace("if concentration > 0.60:",
@@ -104,7 +104,7 @@ def test_the_failure_message_says_not_to_lower_the_threshold(tmp_path):
                                       ".pytest_cache", ".mypy_cache", "report",
                                       "docs", "sessions", "*.egg-info"),
     )
-    bias = work / "vpsim" / "domain" / "assessment" / "bias.py"
+    bias = work / "nidan" / "domain" / "assessment" / "bias.py"
     bias.write_text(
         bias.read_text(encoding="utf-8").replace("if concentration > 0.60:",
                                                  "if concentration > 0.99:"),

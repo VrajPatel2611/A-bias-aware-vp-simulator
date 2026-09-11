@@ -120,7 +120,7 @@ def load_sessions(folder):
 def coverage_percent(rec):
     """History coverage % = topics covered that were required, / required."""
     # Required topics are not stored in the log, so we recompute from the case.
-    from vpsim.domain.content.cases import get_case
+    from nidan.domain.content.cases import get_case
     case = get_case(rec.get("case_id", ""))
     if not case:
         return None

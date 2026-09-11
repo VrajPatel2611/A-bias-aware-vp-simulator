@@ -1,5 +1,5 @@
 """
-Confirmation bias — vpsim.domain.assessment.bias.detect_confirmation_bias.
+Confirmation bias — nidan.domain.assessment.bias.detect_confirmation_bias.
 
   C1  diagnosis matches an anchor keyword AND zero clues explored   score 0.90
   C2  < 25% of clues explored AND ≥ 5 questions      score = 1 - ratio
@@ -8,7 +8,7 @@ case_1 has 6 contradictory clues, all reflux evidence.
 This is the detector that sat at 14% sensitivity; the tests below encode why.
 """
 
-from vpsim.domain.assessment.bias import clue_keywords, detect_confirmation_bias
+from nidan.domain.assessment.bias import clue_keywords, detect_confirmation_bias
 
 # Each question below matches EXACTLY ONE contradictory clue. That matters:
 # "Do you get heartburn after meals?" looks like one question but matches two

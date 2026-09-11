@@ -1,5 +1,5 @@
 """
-Session persistence — vpsim.infra.storage.
+Session persistence — nidan.infra.storage.
 
 Regression tests for a defect found in T-004: `save_session_file` referenced
 `datetime` without importing it, so every save raised NameError. A bare
@@ -14,11 +14,11 @@ import json
 
 import pytest
 
-from vpsim.domain.assessment.bias import detect_all_biases
-from vpsim.domain.assessment.clinical import evaluate_clinical
-from vpsim.domain.content.cases import get_case
-from vpsim.domain.session import create_session
-from vpsim.infra.storage import count_prior_sessions, save_session_file
+from nidan.domain.assessment.bias import detect_all_biases
+from nidan.domain.assessment.clinical import evaluate_clinical
+from nidan.domain.content.cases import get_case
+from nidan.domain.session import create_session
+from nidan.infra.storage import count_prior_sessions, save_session_file
 
 
 @pytest.fixture
@@ -114,6 +114,6 @@ class TestFailureBehaviour:
         """
         def _bug(*a, **k):
             raise NameError("name 'datetime' is not defined")
-        monkeypatch.setattr("vpsim.infra.storage.count_prior_sessions", _bug)
+        monkeypatch.setattr("nidan.infra.storage.count_prior_sessions", _bug)
         with pytest.raises(NameError):
             _save(*completed)

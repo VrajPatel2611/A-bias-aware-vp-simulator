@@ -1,11 +1,11 @@
 """
-Topic extraction — vpsim.domain.assessment.topics.
+Topic extraction — nidan.domain.assessment.topics.
 
 Every coverage figure and the premature-closure detector depend on this. If it
 under-matches, learners are told they missed areas they actually explored.
 """
 
-from vpsim.domain.assessment.topics import TOPIC_KEYWORDS, extract_topics
+from nidan.domain.assessment.topics import TOPIC_KEYWORDS, extract_topics
 
 
 class TestExtraction:

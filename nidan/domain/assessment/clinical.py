@@ -17,7 +17,7 @@ Called by app.py /conclude. Output is consumed by feedback_generator.py
 
 from typing import Any
 
-from vpsim.domain.types import Case, ClinicalEval, Session
+from nidan.domain.types import Case, ClinicalEval, Session
 
 # ── Diagnosis correctness ─────────────────────────────────────────────
 

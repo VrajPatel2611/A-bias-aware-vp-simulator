@@ -135,6 +135,12 @@ Three synchronisation points. Everything else is independent.
 
 ---
 
+> **A note on paths.** File paths below say `nidan/`. Tasks T-001 to T-007 were
+> executed when the package was called `vpsim/`; it was renamed on 11 September
+> 2026 (`PRD` D-8). This document is the forward-looking contract, so it uses
+> current paths throughout. The record of what was actually built, under the old
+> name, is in `docs/build-log/`.
+
 # 4. Phase 0 — Foundation
 
 **Goal:** existing behaviour under test, reproducible build, CI enforcing the research claim.
@@ -142,15 +148,15 @@ Three synchronisation points. Everything else is independent.
 
 ---
 
-**T-001 · Restructure into a `vpsim/` package** — ✅ **DONE** (2026-09-05)
+**T-001 · Restructure into a `nidan/` package** — ✅ **DONE** (2026-09-05)
 ```
 Phase    0            Depends  —              Est  2 d      Owner  V
-Files    vpsim/{api,domain,infra,web}/, pyproject.toml
+Files    nidan/{api,domain,infra,web}/, pyproject.toml
 Spec     TECH_SPEC §4.1 · ADR-0009
 Accept   1. Existing modules moved: cases→domain/content, bias_detector→domain/assessment/bias,
             clinical_evaluator→domain/assessment/clinical, session_tracker→domain/assessment/topics
          2. domain/ imports nothing from infra/ or api/
-         3. `python -m vpsim` starts the app with all existing routes working
+         3. `python -m nidan` starts the app with all existing routes working
          4. validate_detectors.py still reports 94% unchanged
 Tests    Smoke test hitting every existing route
 Done     tests/test_smoke.py (11 route tests) · tests/test_layering.py · import-linter
@@ -219,12 +225,12 @@ Done     Built and run 2026-09-06. PostgreSQL 16.15 + vector 0.8.6 confirmed;
 **T-006 · Typed configuration** — ✅ **DONE** (2026-09-05)
 ```
 Phase    0            Depends  T-001          Est  1 d      Owner  V
-Files    vpsim/config.py, .env.example
+Files    nidan/config.py, .env.example
 Spec     TECH_SPEC §9.4
 Accept   1. pydantic-settings; app fails fast on boot with a clear message if config is invalid
          2. No secret literal anywhere in the repo (gitleaks green)
          3. .env.example documents every variable
-Done     vpsim/config.py (pydantic-settings, 6 fields). Invalid config exits 78
+Done     nidan/config.py (pydantic-settings, 6 fields). Invalid config exits 78
          with a message naming the variable. Secret scan: every blob in git
          history, 0 hits. A test fails if .env.example misses a field.
 ```
@@ -232,12 +238,12 @@ Done     vpsim/config.py (pydantic-settings, 6 fields). Invalid config exits 78
 **T-007 · Structured logging and Sentry** — ✅ **DONE** (2026-09-05)
 ```
 Phase    0            Depends  T-006          Est  0.5 d    Owner  V
-Files    vpsim/infra/telemetry/
+Files    nidan/infra/telemetry/
 Spec     TECH_SPEC §10
 Accept   1. JSON logs to stdout with request_id, session_id, user_id
          2. Raw question text never logged at INFO; no emails, no keys
          3. Sentry wired, send_default_pii=False, release tagged
-Done     vpsim/infra/telemetry/. JSON to stdout, contextvar correlation ids,
+Done     nidan/infra/telemetry/. JSON to stdout, contextvar correlation ids,
          redaction, /healthz + /readyz. End-to-end test drives a consultation
          and greps the output for the learner's own words. PHASE 0 COMPLETE.
 ```
@@ -254,7 +260,7 @@ Done     vpsim/infra/telemetry/. JSON to stdout, contextvar correlation ids,
 **T-010 · Schema and migrations**
 ```
 Phase    1            Depends  T-005          Est  3 d      Owner  V
-Files    vpsim/infra/db/models.py, migrations/versions/001..018
+Files    nidan/infra/db/models.py, migrations/versions/001..018
 Spec     DATA_MODEL §4–7, §9.1
 Accept   1. All 19 v1 tables created by migrations 001–018 in order
          2. All constraints present incl. owner_is_exclusive, one_published_version_per_case,
@@ -280,7 +286,7 @@ Note     Unblocks the frontend track. Do not let this slip.
 **T-012 · Repository layer and tenant scoping**
 ```
 Phase    1            Depends  T-010          Est  2 d      Owner  V
-Files    vpsim/infra/db/repositories/
+Files    nidan/infra/db/repositories/
 Spec     TECH_SPEC §4.1
 Accept   1. Repository base requires an actor context; no query bypasses it
          2. RLS policies applied and tested — a second user's rows are invisible
@@ -290,7 +296,7 @@ Accept   1. Repository base requires an actor context; no query bypasses it
 **T-013 · Event-sourced session state** ⭐
 ```
 Phase    1            Depends  T-012          Est  3 d      Owner  V
-Files    vpsim/domain/session.py, vpsim/infra/db/repositories/session.py
+Files    nidan/domain/session.py, nidan/infra/db/repositories/session.py
 Spec     ADR-0003 · DATA_MODEL §6.2
 Accept   1. SESSION_STORE deleted entirely
          2. Every action appends an event before the response is returned
@@ -303,7 +309,7 @@ Tests    Concurrency test: 10 parallel appends produce seq 1..10 with no gaps or
 **T-014 · Supabase Auth integration**
 ```
 Phase    1            Depends  T-012          Est  2 d      Owner  V
-Files    vpsim/api/auth.py, vpsim/infra/auth/
+Files    nidan/api/auth.py, nidan/infra/auth/
 Spec     ADR-0002 · API_CONTRACT §2.2, §3
 Accept   1. JWT verified against JWKS, cached 10 min
          2. @require_auth and @require_tier('pro') decorators
@@ -315,7 +321,7 @@ Accept   1. JWT verified against JWKS, cached 10 min
 **T-015 · Anonymous trial sessions**
 ```
 Phase    1            Depends  T-013,T-014    Est  1.5 d    Owner  V
-Files    vpsim/api/trial.py
+Files    nidan/api/trial.py
 Spec     PRD FR-2 · DATA_MODEL §6.1
 Accept   1. POST /trial/sessions creates a session with anonymous_id, sets httpOnly cookie
          2. One trial per browser; second attempt → 409 trial_already_used
@@ -326,7 +332,7 @@ Accept   1. POST /trial/sessions creates a session with anonymous_id, sets httpO
 **T-016 · Assessment from events** ⭐
 ```
 Phase    1            Depends  T-013          Est  2 d      Owner  V
-Files    vpsim/domain/assessment/engine.py
+Files    nidan/domain/assessment/engine.py
 Spec     TECH_SPEC §4.4 · DATA_MODEL §6.3–6.4
 Accept   1. assess(events, case_content, engine_version) is a pure function
          2. Thresholds read from engine_versions, not from constants in code
@@ -339,7 +345,7 @@ Tests    Golden-file test over the 16 pilot sessions asserting stored == recompu
 **T-017 · Free-tier allowance and case selection**
 ```
 Phase    1            Depends  T-014          Est  1.5 d    Owner  V
-Files    vpsim/domain/selection.py
+Files    nidan/domain/selection.py
 Spec     PRD FR-3, FR-10.1 · DATA_MODEL §11.1–11.2
 Accept   1. Random published case the user has not completed; falls back to least-recent
          2. Allowance counts every session started this month incl. abandoned
@@ -370,7 +376,7 @@ Accept   1. 16 sessions imported with 8 profiles keyed on research_pid
 **T-020 · Admin shell and auth**
 ```
 Phase    2            Depends  T-014          Est  1 d      Owner  Y
-Files    vpsim/web/admin/
+Files    nidan/web/admin/
 Spec     UX_SPEC §12 · ADR-0006
 Accept   1. Jinja + HTMX shell, admin-only, desktop-only
          2. Every admin action writes to audit_log
@@ -379,7 +385,7 @@ Accept   1. Jinja + HTMX shell, admin-only, desktop-only
 **T-021 · Case editor** ⭐
 ```
 Phase    2            Depends  T-020,T-011    Est  5 d      Owner  Y
-Files    vpsim/web/admin/cases/
+Files    nidan/web/admin/cases/
 Spec     UX_SPEC §12 A-02 · DATA_MODEL §8.1 · API_CONTRACT §9
 Accept   1. Sectioned form: patient, truth, trap, history, clues, exams, investigations, persona
          2. Editing a published version creates a new draft; published content immutable
@@ -392,7 +398,7 @@ Note     C-4 enforcement here is the structural fix for the 14%-sensitivity clas
 **T-022 · Playtest with live instrumentation** ⭐
 ```
 Phase    2            Depends  T-021,T-016    Est  4 d      Owner  Y
-Files    vpsim/web/admin/playtest/
+Files    nidan/web/admin/playtest/
 Spec     UX_SPEC §12 A-03
 Accept   1. Split view: student UI left, instrumentation right
          2. Right panel shows per-question matched topics, counters (q,a,m,c,k/K),
@@ -406,7 +412,7 @@ Note     This is how a non-programmer sees WHY a detector fired. Highest-value a
 **T-023 · Clinical review workflow** ⭐
 ```
 Phase    2            Depends  T-022          Est  2 d      Owner  Y
-Files    vpsim/web/admin/reviews/
+Files    nidan/web/admin/reviews/
 Spec     PRD FR-12.4–12.5 · DATA_MODEL §5.2, §8.4
 Accept   1. Assign a version to a reviewer; reviewer opens it in Playtest
          2. Rubric 1–5 on plausibility, consistency, trap validity, solvability
@@ -428,7 +434,7 @@ Note     Completing this unblocks your two clinician reviewers. Pull it as early
 **T-030 · JSON API** ⭐ *(sync point S-2)*
 ```
 Phase    3            Depends  T-016,T-017    Est  6 d      Owner  V
-Files    vpsim/api/v1/
+Files    nidan/api/v1/
 Spec     API_CONTRACT §4–8
 Accept   1. Every v1 endpoint implemented per openapi.yaml
          2. Error envelope on every 4xx/5xx; all codes in the §10 catalogue
@@ -441,7 +447,7 @@ Tests    Contract tests CT-1..CT-9 (API_CONTRACT §11) — CT-1 and CT-5 are man
 **T-031 · LLM gateway hardening**
 ```
 Phase    3            Depends  T-006          Est  2 d      Owner  V
-Files    vpsim/infra/llm/
+Files    nidan/infra/llm/
 Spec     TECH_SPEC §4.3 · ADR-0011
 Accept   1. Per-purpose model routing (patient / feedback / extraction / judge)
          2. Exponential backoff with jitter; circuit breaker after N failures

@@ -9,9 +9,9 @@ import os
 
 from flask import Flask, g, jsonify, request
 
-from vpsim.api.routes import bp as web_bp
-from vpsim.config import settings
-from vpsim.infra.telemetry import (
+from nidan.api.routes import bp as web_bp
+from nidan.config import settings
+from nidan.infra.telemetry import (
     bind,
     get_logger,
     new_request_id,
@@ -28,7 +28,7 @@ def create_app(config: dict | None = None) -> Flask:
     A factory rather than a module-level app so tests can build an isolated
     instance, and so configuration is injected rather than read at import time.
 
-    Configuration is validated in vpsim.config before this runs, so an invalid
+    Configuration is validated in nidan.config before this runs, so an invalid
     environment fails at start-up rather than mid-consultation (T-006).
     """
     app = Flask(
@@ -39,7 +39,7 @@ def create_app(config: dict | None = None) -> Flask:
 
     # A fixed key keeps sessions valid across restarts; the random fallback
     # means a missing key never blocks local development. Validation of the key
-    # itself happens once, at import, in vpsim.config.
+    # itself happens once, at import, in nidan.config.
     app.secret_key = settings.FLASK_SECRET_KEY or os.urandom(24)
 
     if config:
@@ -128,11 +128,11 @@ def _register_health_endpoints(app: Flask) -> None:
 
 def _cases_loaded() -> bool:
     try:
-        from vpsim.domain.content.cases import get_all_cases
+        from nidan.domain.content.cases import get_all_cases
         return len(get_all_cases()) > 0
     except Exception:          # noqa: BLE001 - a probe must never raise
         return False
 
 
-# WSGI entry point: `gunicorn vpsim.app:app`
+# WSGI entry point: `gunicorn nidan.app:app`
 app = create_app()

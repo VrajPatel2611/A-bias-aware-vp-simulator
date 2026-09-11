@@ -9,9 +9,9 @@ author remembering to opt in is not a guarantee.
 
 import pytest
 
+from nidan.domain.content.cases import get_case
+from nidan.domain.session import create_session
 from tests.fakes.llm import FakeLLM
-from vpsim.domain.content.cases import get_case
-from vpsim.domain.session import create_session
 
 # Every domain test that needs a timestamp uses this one. Fixed, so any test
 # that accidentally depends on wall-clock time fails consistently rather than
@@ -37,7 +37,7 @@ def _no_real_llm(monkeypatch):
             "a live model — use the `fake_llm` fixture, or FakeLLM directly."
         )
 
-    monkeypatch.setattr("vpsim.infra.llm.gateway._get_client", _forbidden)
+    monkeypatch.setattr("nidan.infra.llm.gateway._get_client", _forbidden)
     monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
 
 
@@ -52,7 +52,7 @@ def fake_llm(monkeypatch):
     test_no_network.py so it cannot silently go stale.
     """
     llm = FakeLLM()
-    for site in ("vpsim.infra.feedback.call_llm", "vpsim.api.routes.call_llm"):
+    for site in ("nidan.infra.feedback.call_llm", "nidan.api.routes.call_llm"):
         monkeypatch.setattr(site, llm)
     return llm
 

@@ -19,7 +19,7 @@ useDefault = true
 description = "Test fixtures and documentation examples — no real credentials"
 
 regexes = [
-  # vpsim/infra/telemetry/redaction.py must be tested against strings shaped
+  # nidan/infra/telemetry/redaction.py must be tested against strings shaped
   # like real keys, or the redaction it performs is untested. Each of these is
   # obviously synthetic: sequential alphabets and repeated patterns.
   '''gsk_abc123def456''',

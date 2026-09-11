@@ -158,8 +158,8 @@ class Settings(BaseSettings):
         """Sentry release. Falls back to the package version."""
         if self.RELEASE.strip():
             return self.RELEASE.strip()
-        from vpsim import __version__
-        return f"vpsim@{__version__}"
+        from nidan import __version__
+        return f"nidan@{__version__}"
 
     @property
     def is_production(self) -> bool:

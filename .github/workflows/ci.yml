@@ -31,7 +31,7 @@ jobs:
         # Strict on domain/ only. It is the pure layer and the part that must be
         # correct; api/ and infra/ are covered by tests and are being replaced
         # (T-030).
-        run: mypy vpsim/domain --strict
+        run: mypy nidan/domain --strict
 
       - name: import-linter (ADR-0009 layering contract)
         run: lint-imports
@@ -48,7 +48,7 @@ jobs:
       - run: pip install -e ".[dev]"
 
       - name: pytest
-        # Coverage gate (>=90% on vpsim.domain) is configured in pyproject.toml.
+        # Coverage gate (>=90% on nidan.domain) is configured in pyproject.toml.
         # No test may make a network call — enforced by an autouse fixture.
         run: pytest -m "not slow" -q
         env:
@@ -154,4 +154,4 @@ jobs:
         with:
           context: .
           push: false
-          tags: vpsim:ci
+          tags: nidan:ci

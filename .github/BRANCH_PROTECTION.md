@@ -64,7 +64,7 @@ Open a pull request with a deliberately broken detector:
 ```bash
 git checkout -b test/verify-ci-gate
 sed -i '' 's/if concentration > 0.60:/if concentration > 0.99:/' \
-  vpsim/domain/assessment/bias.py
+  nidan/domain/assessment/bias.py
 git commit -am "TEST: deliberately degrade anchoring — do not merge"
 git push -u origin test/verify-ci-gate
 ```

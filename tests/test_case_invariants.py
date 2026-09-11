@@ -17,9 +17,9 @@ for is a failure that gets ignored.
 
 import pytest
 
-from vpsim.domain.assessment.bias import clue_keywords
-from vpsim.domain.assessment.topics import TOPIC_KEYWORDS
-from vpsim.domain.content.cases import (
+from nidan.domain.assessment.bias import clue_keywords
+from nidan.domain.assessment.topics import TOPIC_KEYWORDS
+from nidan.domain.content.cases import (
     CASES,
     MASTER_EXAMINATIONS,
     MASTER_INVESTIGATIONS,

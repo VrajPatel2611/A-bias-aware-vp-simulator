@@ -52,7 +52,7 @@ def _before_send(event, hint):
     what it does not: a key interpolated into an exception message, or a query
     string on the URL.
     """
-    from vpsim.infra.telemetry.redaction import scrub
+    from nidan.infra.telemetry.redaction import scrub
 
     try:
         for exception in event.get("exception", {}).get("values", []):

@@ -38,9 +38,9 @@ Output: prints a report and writes docs/detector_validation.md
 
 import sys
 
-from vpsim.domain.assessment.bias import detect_all_biases
-from vpsim.domain.content.cases import get_case
-from vpsim.domain.session import create_session, update_session
+from nidan.domain.assessment.bias import detect_all_biases
+from nidan.domain.content.cases import get_case
+from nidan.domain.session import create_session, update_session
 
 # Windows consoles default to cp1252, which cannot encode the box-drawing and
 # tick characters this script prints — `print("✓")` raises UnicodeEncodeError

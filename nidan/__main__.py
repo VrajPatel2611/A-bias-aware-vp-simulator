@@ -1,7 +1,7 @@
-"""Development entry point: `python -m vpsim`."""
+"""Development entry point: `python -m nidan`."""
 
-from vpsim.app import create_app
-from vpsim.config import settings
+from nidan.app import create_app
+from nidan.config import settings
 
 
 def main() -> None:

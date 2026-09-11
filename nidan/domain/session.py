@@ -14,8 +14,8 @@ The function signatures are kept stable so that change is contained.
 from datetime import datetime
 from typing import Any
 
-from vpsim.domain.assessment.topics import extract_topics
-from vpsim.domain.types import Case, Session
+from nidan.domain.assessment.topics import extract_topics
+from nidan.domain.types import Case, Session
 
 
 def create_session(case_id: str, *, started_at: str) -> Session:
@@ -26,7 +26,7 @@ def create_session(case_id: str, *, started_at: str) -> Session:
         case_id (str): e.g. "case_1"
         started_at (str): ISO 8601 timestamp. Passed in rather than read from
             the clock so that this function is pure and its output depends only
-            on its arguments — see vpsim.infra.clock for why.
+            on its arguments — see nidan.infra.clock for why.
 
     Returns:
         dict: Empty session with all tracking fields initialized.

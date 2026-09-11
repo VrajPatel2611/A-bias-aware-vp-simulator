@@ -1,5 +1,5 @@
 """
-Typed configuration — vpsim.config (BUILD_PLAN T-006).
+Typed configuration — nidan.config (BUILD_PLAN T-006).
 
 Criterion 1 is "fails fast on boot with a clear message". These tests check
 both halves: that invalid configuration is rejected, and that the message
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from vpsim.config import Settings, load_settings
+from nidan.config import Settings, load_settings
 
 REPO = Path(__file__).resolve().parent.parent
 

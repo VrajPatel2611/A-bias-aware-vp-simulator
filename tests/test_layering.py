@@ -12,8 +12,8 @@ run catches a violation before the push.
 import ast
 import pathlib
 
-DOMAIN = pathlib.Path(__file__).resolve().parent.parent / "vpsim" / "domain"
-FORBIDDEN = ("vpsim.infra", "vpsim.api", "vpsim.app")
+DOMAIN = pathlib.Path(__file__).resolve().parent.parent / "nidan" / "domain"
+FORBIDDEN = ("nidan.infra", "nidan.api", "nidan.app")
 
 
 def _imports(path: pathlib.Path):

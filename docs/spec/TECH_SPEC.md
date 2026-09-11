@@ -153,7 +153,7 @@ PR-1 is what made the pilot's data-integrity check possible: results were recomp
 Modular monolith (`ADR-0009`). One deployable, enforced internal layering.
 
 ```
-vpsim/
+nidan/
 ├── api/            HTTP layer — routing, request/response schemas
 │   └── v1/
 ├── domain/         Pure logic. No I/O. Fully unit-testable.

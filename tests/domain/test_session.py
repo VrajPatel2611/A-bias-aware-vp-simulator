@@ -1,5 +1,5 @@
 """
-Session state — vpsim.domain.session.
+Session state — nidan.domain.session.
 
 Also covers T-002 criterion 2: the clock is injected, so a session's timestamps
 depend only on what the caller passed in.
@@ -7,7 +7,7 @@ depend only on what the caller passed in.
 
 import pytest
 
-from vpsim.domain.session import (
+from nidan.domain.session import (
     create_session,
     get_session_summary,
     record_exam,

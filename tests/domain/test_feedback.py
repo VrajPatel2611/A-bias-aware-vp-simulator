@@ -1,5 +1,5 @@
 """
-Feedback — vpsim.domain.feedback (prompt building) and vpsim.infra.feedback
+Feedback — nidan.domain.feedback (prompt building) and nidan.infra.feedback
 (the model call).
 
 The split matters: deciding *what to say* is domain logic and testable with no
@@ -7,11 +7,11 @@ network; calling the model is infrastructure. The fallback path below runs with
 no model at all, which is what guarantees no consultation ends without guidance.
 """
 
+from nidan.domain.assessment.bias import detect_all_biases
+from nidan.domain.assessment.clinical import evaluate_clinical
+from nidan.domain.feedback import build_fallback_feedback, build_feedback_prompt
+from nidan.infra.feedback import generate_feedback
 from tests.fakes.llm import FakeLLMError
-from vpsim.domain.assessment.bias import detect_all_biases
-from vpsim.domain.assessment.clinical import evaluate_clinical
-from vpsim.domain.feedback import build_fallback_feedback, build_feedback_prompt
-from vpsim.infra.feedback import generate_feedback
 
 BANNED = ["bias", "anchoring", "premature closure", "confirmation bias"]
 

@@ -1,5 +1,5 @@
 """
-Telemetry — vpsim.infra.telemetry (BUILD_PLAN T-007, TECH_SPEC §10).
+Telemetry — nidan.infra.telemetry (BUILD_PLAN T-007, TECH_SPEC §10).
 
 Criterion 2 — "raw question text never logged at INFO; no emails, no keys" — is
 the one that needs proving rather than asserting. `TestNothingSensitiveReaches`
@@ -13,9 +13,9 @@ import logging
 
 import pytest
 
-from vpsim.infra.telemetry import context
-from vpsim.infra.telemetry.logging import JsonFormatter, configure_logging
-from vpsim.infra.telemetry.redaction import (
+from nidan.infra.telemetry import context
+from nidan.infra.telemetry.logging import JsonFormatter, configure_logging
+from nidan.infra.telemetry.redaction import (
     REDACTED,
     question_fingerprint,
     safe_extra,
@@ -180,7 +180,7 @@ class TestNothingSensitiveReaches:
     """
 
     def test_a_learners_question_never_appears_in_the_log(self, monkeypatch, capsys):
-        from vpsim.app import create_app
+        from nidan.app import create_app
 
         monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
         app = create_app({"TESTING": True})
@@ -210,7 +210,7 @@ class TestNothingSensitiveReaches:
 
     def test_health_probes_are_not_logged(self, monkeypatch, capsys):
         """They fire every 30 seconds and would drown the signal."""
-        from vpsim.app import create_app
+        from nidan.app import create_app
 
         monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
         client = create_app({"TESTING": True}).test_client()
@@ -222,7 +222,7 @@ class TestNothingSensitiveReaches:
 class TestHealthEndpoints:
     @pytest.fixture
     def client(self, monkeypatch):
-        from vpsim.app import create_app
+        from nidan.app import create_app
         monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
         return create_app({"TESTING": True}).test_client()
 
@@ -250,24 +250,24 @@ class TestHealthEndpoints:
 
 class TestSentryConfiguration:
     def test_no_dsn_means_disabled_not_broken(self):
-        from vpsim.infra.telemetry.errors import configure_sentry
+        from nidan.infra.telemetry.errors import configure_sentry
         assert configure_sentry("", "test", "v1") is False
 
     def test_before_send_scrubs_the_exception_value(self):
-        from vpsim.infra.telemetry.errors import _before_send
+        from nidan.infra.telemetry.errors import _before_send
         event = {"exception": {"values": [
             {"value": "auth failed for gsk_abcdefghij1234567890"}]}}
         out = _before_send(event, None)
         assert "gsk_abcdefghij1234567890" not in out["exception"]["values"][0]["value"]
 
     def test_before_send_drops_the_query_string(self):
-        from vpsim.infra.telemetry.errors import _before_send
+        from nidan.infra.telemetry.errors import _before_send
         out = _before_send({"request": {"query_string": "email=a@b.com"}}, None)
         assert "query_string" not in out["request"]
 
     def test_before_send_never_raises(self):
         """A reporting failure must not become the error being reported."""
-        from vpsim.infra.telemetry.errors import _before_send
+        from nidan.infra.telemetry.errors import _before_send
         assert _before_send({"exception": "not-a-dict"}, None) is not None
 
 
