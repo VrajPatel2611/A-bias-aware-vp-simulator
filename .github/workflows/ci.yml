@@ -78,6 +78,27 @@ jobs:
         env:
           GROQ_API_KEY: not-a-real-key-tests-must-never-call-a-model
 
+  database:
+    # Separate job, like Tests (Windows), so the required-check name "Tests"
+    # keeps working and a schema failure reports itself as a schema failure.
+    #
+    # These tests start a real PostgreSQL 16 + pgvector container and migrate it
+    # from scratch. They cannot run on SQLite: every guarantee they check —
+    # partial unique indexes, CHECK constraints, append-only triggers, the
+    # publication gate, RLS — is a PostgreSQL feature.
+    name: Database schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: Migrations, constraints, triggers and RLS
+        run: pytest tests/db -q --no-cov
+
   validation:
     name: Detector validation (research claim)
     runs-on: ubuntu-latest

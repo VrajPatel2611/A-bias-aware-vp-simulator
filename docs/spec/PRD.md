@@ -240,6 +240,72 @@ Mobile apps · Case Factory · embeddings + threshold calibration · case varian
 
 ---
 
+## 5.5 Launch market — ✅ DECIDED (11 September 2026), and the question it opened
+
+> **DECIDED: global English-speaking from day one** — India, UK, Commonwealth,
+> US and Australia together, with regional pricing (§9.4) doing the work of
+> making it affordable in each.
+
+### What this settles
+
+**Payments: Stripe, confirmed.** An India-first launch would have been awkward —
+RBI e-mandate rules make recurring card payments materially harder, and a
+domestic provider such as Razorpay would likely have been the better fit,
+invalidating T-041 as written. A global launch removes that: Stripe handles
+multi-currency and regional pricing natively. *(Stripe was assumed throughout
+`BUILD_PLAN` and `DATA_MODEL` but never recorded in an ADR. It now has a
+reason.)*
+
+### What this does NOT settle
+
+**The Supabase region is still open** (`SECURITY_SPEC` S-4). "Global" does not
+mean multi-region — there is one database, in one place, and that place has
+legal consequences. UK and EU users bring GDPR transfer obligations if data
+sits outside the EU. This must be chosen deliberately before launch.
+
+**Three legal regimes now apply, not one:** UK/EU GDPR, India's DPDP Act, and
+US state law such as CCPA. That is a real cost for a two-person team and it
+belongs in the launch checklist (`SECURITY_SPEC` §8), not in someone's memory.
+
+---
+
+## ⟨D-9⟩ Clinical convention — OPEN, raised by D-7
+
+**A global launch means one set of cases is read by students trained in
+different conventions, and the existing five are not neutral.**
+
+Measured in `nidan/domain/content/cases.py`:
+
+| | | |
+|---|---|---|
+| `mmol/L` | 24 | SI units — UK, India, Australia. **US uses mg/dL** |
+| `g/L` | 23 | **US uses g/dL** |
+| `paracetamol` | 1 | **US says acetaminophen** |
+| `haemo…` | 10 | British spelling |
+| `oesophag…` / `esophag…` | 11 / 14 | **inconsistent with itself** |
+
+The cases are written in Commonwealth convention, which matches `CLAUDE.md`'s
+house style — but a US student reading *"glucose 7.8 mmol/L"* must convert to
+140 mg/dL before they can reason about it. **For a product whose whole subject
+is interpreting clinical values, that is not cosmetic friction.**
+
+**Options:**
+
+| | |
+|---|---|
+| **A · Commonwealth only** | Matches existing content and house style. Accepts friction for US users. Cheapest |
+| **B · Locale-aware display** | Store SI, render mg/dL for US users. Real feature work, and it must not change what the detectors match on |
+| **C · Dual notation** | `7.8 mmol/L (140 mg/dL)` in the case text. No code, some clutter, works immediately |
+
+**Not decided.** It affects how cases 6–10 are authored, so it should be settled
+before authoring starts rather than after.
+
+**Separately and regardless of market:** the `oesophageal`/`esophageal` mix is
+an internal inconsistency in existing content and should be made uniform. Not
+changed here — clinical text is not edited without review.
+
+---
+
 # 6. Functional requirements
 
 Format: **FR-n** · description · user stories · acceptance criteria (testable) · edge cases.
@@ -713,9 +779,10 @@ is a config change and not a migration. **Instrument it and adjust** (§10).
 
 **Why full feedback on free:** the feedback *is* the product. Crippling it would mean free users never understand what they would be paying for.
 
-## 9.2 Price ⟨DECIDE⟩
+## 9.2 Price — ✅ DECIDED (11 September 2026)
 
-> **Recommendation: US$8–12/month, or US$60–80/year.**
+> **DECIDED: US$8–12/month, or US$60–80/year.** The exact figure within that
+> range is set at T-041, when real LLM cost per completed session is known.
 >
 > Context: Amboss and UWorld sit at roughly $30–50/month. We are a focused single-purpose tool, not a comprehensive question bank, so we should price meaningfully below them. Anchoring near $10 keeps us in "obvious yes" territory for a student already spending on study tools.
 >
@@ -729,9 +796,13 @@ is a config change and not a migration. **Instrument it and adjust** (§10).
 | Progress tracking | Drives retention; gating it hurts conversion |
 | Data export | Ethical baseline (P5) |
 
-## 9.4 Regional pricing ⟨DECIDE⟩
+## 9.4 Regional pricing — ✅ DECIDED (11 September 2026)
 
-> **Recommendation: implement purchasing-power-adjusted pricing at launch**, not later. Retrofitting price tiers after users have anchored on one price causes support pain and resentment. Stripe supports this natively.
+> **DECIDED: implement purchasing-power-adjusted pricing at launch**, not later.
+> This matters more given D-7 — a global launch means an Indian resident and a
+> US resident hit the same pricing page on day one.
+>
+> Original reasoning: Retrofitting price tiers after users have anchored on one price causes support pain and resentment. Stripe supports this natively.
 
 ## 9.5 Mobile billing (deferred, but plan now)
 
@@ -749,7 +820,7 @@ Not signups, not page views. A user who completes a case has experienced the pro
 
 ## 10.2 Funnel
 
-| Stage | Metric | v1 target ⟨DECIDE⟩ |
+| Stage | Metric | v1 target — ✅ DECIDED |
 |---|---|---|
 | Acquisition | Landing → trial start | 25 % |
 | Activation | Trial start → trial completed | 60 % |
@@ -758,7 +829,14 @@ Not signups, not page views. A user who completes a case has experienced the pro
 | Conversion | Free → Pro within 60 days | 5 % |
 | Retention | D30 retention of activated users | 25 % |
 
-*Targets are hypotheses for a first product, not benchmarks. Their purpose is to make under-performance visible early.*
+**DECIDED: accepted as tabled, explicitly provisional.**
+
+No preference was expressed, so these stand as written. They are **hypotheses,
+not goals** — none is validated, and a first product has no benchmark to compare
+against. Their only purpose is to make under-performance visible early.
+
+**Revisit after the first 100 activated users.** If a number is missed, the
+question is whether the target was wrong, not only whether the product was.
 
 ## 10.3 Product-health metrics
 
@@ -791,17 +869,18 @@ If users are learning, this rises. If it does not, our central claim is not work
 
 # 11. Open decisions
 
-**Decided 9 September 2026: D-1, D-2, D-3.** The remaining five are open.
+**All eight decided.** D-1, D-2, D-3 and D-8 on 9 September 2026; D-4 to D-7 on 11 September. **D-7 raised a new open question, D-9** — see §5.5.
 
 | # | Decision | Recommendation | Blocks | Status |
 |---|---|---|---|---|
 | **D-1** | Primary persona (§3.1) | Clinical-phase students + early trainees | UX tone, case difficulty | ✅ **DECIDED** — recommendation accepted |
 | **D-2** | Launch case count (§5.4) | 10 — **5 more to author** | Launch date | ✅ **DECIDED** — 10 |
 | **D-3** | Free tier limit (§9.1) | 3 per month | gating code (T-017) | ✅ **DECIDED** — 3/month, instrument and adjust |
-| ⟨D-4⟩ | Price point (§9.2) | $8–12/mo, $60–80/yr | Stripe setup |
-| ⟨D-5⟩ | Regional pricing (§9.4) | Yes, at launch | Stripe setup |
-| ⟨D-6⟩ | Funnel targets (§10.2) | As tabled | Analytics setup |
-| ⟨D-7⟩ | Launch market | *No recommendation — you know your audience* | Pricing, legal |
+| **D-4** | Price point (§9.2) | $8–12/mo, $60–80/yr | Stripe setup | ✅ **DECIDED** — range accepted |
+| **D-5** | Regional pricing (§9.4) | Yes, at launch | Stripe setup | ✅ **DECIDED** — yes |
+| **D-6** | Funnel targets (§10.2) | As tabled | Analytics setup | ✅ **DECIDED** — accepted, provisional |
+| **D-7** | Launch market | — | Pricing, legal | ✅ **DECIDED** — global English-speaking |
+| ⟨D-9⟩ | **Clinical convention** (§5.5) | *New — raised by D-7* | Case authoring | ⬜ **OPEN** |
 | **D-8** | Product name / domain | **Nidan** | Everything user-facing | ✅ **DECIDED** — Nidan |
 
 ## D-8 — product name — ✅ DECIDED (9 September 2026)
