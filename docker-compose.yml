@@ -10,6 +10,12 @@
 # has somewhere to land, and so `docker compose up` is the single command a new
 # machine needs from this point on.
 
+# Pinned so the project name does not depend on the directory anyone happens
+# to clone into. Without it Compose derives the name from the folder, so a
+# clone into "nidan-app/" would get its own containers and its own database
+# volume — and a `down -v` in one folder would orphan the other's data.
+name: nidan
+
 services:
   db:
     # pgvector's own image rather than postgres:16 plus a manual build step:

@@ -257,7 +257,7 @@ Done     nidan/infra/telemetry/. JSON to stdout, contextvar correlation ids,
 
 ---
 
-**T-010 · Schema and migrations**
+**T-010 · Schema and migrations** — ✅ **DONE** (2026-09-11)
 ```
 Phase    1            Depends  T-005          Est  3 d      Owner  V
 Files    nidan/infra/db/models.py, migrations/versions/001..018
@@ -269,6 +269,11 @@ Accept   1. All 19 v1 tables created by migrations 001–018 in order
          4. require_clinical_approval trigger blocks publishing without an approving review
          5. `alembic downgrade base` then `upgrade head` succeeds on an empty database
 Tests    testcontainers Postgres; one test per constraint asserting it actually rejects
+Done     16 migrations (001-016), 21 tables, 6 enums, 11 triggers, 5 RLS policies.
+         37 database tests: constraints, append-only triggers, publication gate,
+         RLS denial as a non-superuser, and the downgrade/upgrade round-trip.
+         017-018 are seed data and belong to T-011. NOTE: criterion 1 says 19
+         tables; DATA_MODEL §4-7 defines 21.
 ```
 
 **T-011 · Seed content and `openapi.yaml` skeleton** ⭐ *(sync point S-1)*

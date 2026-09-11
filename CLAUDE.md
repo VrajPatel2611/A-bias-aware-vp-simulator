@@ -94,6 +94,8 @@ nidan/
   app.py                create_app() factory · __main__.py runs it
 
 tests/                  test_smoke.py (routes) · test_layering.py (ADR-0009)
+  db/                   schema tests — constraints, triggers, RLS (real Postgres)
+migrations/versions/    16 hand-written Alembic migrations ← the schema's source of truth
 docs/build-log/         what was actually built, one doc per finished task
 docs/spec/              the build contract — 6 docs + adr/  ← the source of truth
 docs/design/            superseded design docs (historical)
@@ -125,6 +127,11 @@ python validate_detectors.py       # detector validation — must report >= 94%
 python analyze_sessions.py sessions # paired statistics over session JSON
 python test_api.py                 # check the LLM key works
 python scripts/build_status.py     # regenerate docs/build-log/STATUS.md
+
+# database (T-010) — needs the stack up: docker compose up -d db
+alembic upgrade head               # apply all 16 migrations
+alembic downgrade base             # tear the schema down
+pytest tests/db -q --no-cov        # 37 schema tests, real Postgres in a container
 ```
 
 ---
