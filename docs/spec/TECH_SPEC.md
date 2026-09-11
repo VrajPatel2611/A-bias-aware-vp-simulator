@@ -1,4 +1,4 @@
-# VPSim — Technical Specification
+# Nidan — Technical Specification
 
 ---
 
@@ -77,7 +77,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim Technical Specification |
+| **Document** | Nidan Technical Specification |
 | **Version** | v1.0 |
 | **Status** | Draft — consolidates `design/SYSTEM_DESIGN.md` and `design/PLATFORM_SPEC.md` |
 | **Owners** | Vraj Patel, Yogesh Bagotia |
@@ -127,7 +127,7 @@ PR-1 is what made the pilot's data-integrity check possible: results were recomp
 
 ```
    Learner ────────►┌──────────────────────────────┐
-                    │        VPSim Platform        │
+                    │        Nidan Platform        │
  Clinical    ──────►│                              │
  reviewer           │  Next.js web · Flask API     │◄───► LLM providers
                     │  Jinja admin · Assessment    │      (per-purpose routing)

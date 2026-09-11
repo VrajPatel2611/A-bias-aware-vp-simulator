@@ -1,6 +1,6 @@
 # Rename plan — VPSim → Nidan
 
-**Status: planned, not executed.** Nothing below has been done yet.
+**Status: Phase A executed, 11 September 2026. Phase B not done and may never be.**
 
 D-8 was decided on 9 September 2026 (`PRD` §11). This is the plan for making it
 real in one deliberate change rather than letting the new name leak in gradually
@@ -21,7 +21,7 @@ Not estimated — counted.
 | `.env.example` | 10 | No — documentation of defaults |
 | `.github/workflows/ci.yml` | 3 | Minor — image tag |
 | `CLAUDE.md` | 4 | No |
-| **Markdown docs** | **259 across 22 files** | No |
+| **Markdown docs** | **48 across 15 files** — *corrected; the original 259 was a case-insensitive count that swept in the package identifier* | No |
 | **`.docx` files named `VPSim_*`** | 25 | No — regenerated anyway |
 | **GitHub repository name** | — | Yes for anyone who has cloned |
 
@@ -52,9 +52,25 @@ the full CI suite — never bundled with a documentation change.
 
 ---
 
-## 3 · Phase A — the product name (do this first)
+## 3 · Phase A — the product name — ✅ DONE (11 September 2026)
 
-**Effort: about half a day. Risk: low. Nothing executable changes.**
+**Actual effort: under an hour. 36 replacements across 13 files, 26 `.docx`
+regenerated.** Smaller than planned, because the 259 figure was wrong (§1).
+
+Domains were deliberately **not** secured first, against the advice in A1. The
+name was already public in a pushed commit by then, so delaying the rename no
+longer reduced the squatting risk — it only delayed the work. **`nidan.app` is
+still unbought.**
+
+Two user-facing strings in the code were changed as well as the documentation,
+because a configuration error and a start-up banner are read by humans:
+
+```
+ * Nidan running on http://127.0.0.1:8000
+Nidan cannot start — configuration is invalid:
+```
+
+All six CI checks passed after the change.
 
 ### A1 · Secure the domains before anything is public
 

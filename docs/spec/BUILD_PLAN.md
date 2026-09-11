@@ -1,4 +1,4 @@
-# VPSim — Build Plan
+# Nidan — Build Plan
 
 ---
 
@@ -41,7 +41,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim Build Plan |
+| **Document** | Nidan Build Plan |
 | **Version** | v1.0 |
 | **Status** | Draft |
 | **Team** | Vraj Patel, Yogesh Bagotia (+ AI assistance) |

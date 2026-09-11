@@ -1,4 +1,4 @@
-# VPSim — Product Requirements Document
+# Nidan — Product Requirements Document
 
 ---
 
@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim Product Requirements Document |
+| **Document** | Nidan Product Requirements Document |
 | **Version** | v1.0 |
 | **Status** | Draft — awaiting sign-off on §9 pricing and §3.1 persona |
 | **Owners** | Vraj Patel, Yogesh Bagotia |
@@ -16,7 +16,7 @@
 
 ## 1.1 Purpose of this document
 
-This PRD defines **what** VPSim v1 is and **why**. It does not describe implementation — that lives in `TECH_SPEC.md`.
+This PRD defines **what** Nidan v1 is and **why**. It does not describe implementation — that lives in `TECH_SPEC.md`.
 
 It exists to serve as a **build contract**. Every functional requirement in §6 carries acceptance criteria and edge cases, so that implementation is mechanical and disagreements surface here rather than mid-build.
 
@@ -837,7 +837,7 @@ Notion ran on `notion.so` for years.
 **Secure the domains before the name appears publicly.**
 
 > The rename is planned but **not yet executed** — see
-> `docs/process/RENAME_PLAN.md`. "VPSim" appears 259 times across 22 documents
+> `docs/process/RENAME_PLAN.md`. "Nidan" appears 259 times across 22 documents
 > and is also the Python package identifier, so it is done deliberately in one
 > change rather than allowed to leak.
 

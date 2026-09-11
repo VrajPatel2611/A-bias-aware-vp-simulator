@@ -1,4 +1,4 @@
-# VPSim — project context
+# Nidan — project context
 
 A bias-aware virtual patient simulator. Medical trainees interview an LLM-driven
 patient, order examinations and tests, submit a diagnosis, and receive feedback on

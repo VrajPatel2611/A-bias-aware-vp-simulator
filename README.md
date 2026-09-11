@@ -1,4 +1,4 @@
-# VPSim — Bias-Aware Virtual Patient Simulator
+# Nidan — Bias-Aware Virtual Patient Simulator
 
 A web-based clinical reasoning training tool for medical students.  
 You interview a virtual patient, order investigations, perform examinations, submit a diagnosis — then receive detailed Socratic feedback on your reasoning process, not just whether you were right or wrong.

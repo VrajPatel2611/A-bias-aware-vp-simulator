@@ -182,7 +182,7 @@ def load_settings() -> Settings:
     try:
         return Settings()
     except ValidationError as e:
-        print("\nVPSim cannot start — configuration is invalid:\n", file=sys.stderr)
+        print("\nNidan cannot start — configuration is invalid:\n", file=sys.stderr)
         for err in e.errors():
             field = ".".join(str(p) for p in err["loc"]) or "(root)"
             print(f"  {field}: {err['msg']}", file=sys.stderr)

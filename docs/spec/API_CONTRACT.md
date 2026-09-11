@@ -1,4 +1,4 @@
-# VPSim — API Contract
+# Nidan — API Contract
 
 ---
 
@@ -53,7 +53,7 @@
 
 | Field | Value |
 |---|---|
-| **Document** | VPSim API Contract |
+| **Document** | Nidan API Contract |
 | **Version** | v1.0 |
 | **Base URL** | `https://api.vpsim.app/v1` ⟨domain pending, `PRD` D-8⟩ |
 | **Machine-readable** | `openapi.yaml` — **the source of truth** |
@@ -202,7 +202,7 @@ Supabase handles credentials. Our API handles profile lifecycle.
 ## 3.1 Signup
 
 ```
-Client                    Supabase                 VPSim API
+Client                    Supabase                 Nidan API
   │─ signUp(email,pw) ──────► │                        │
   │ ◄──── JWT + user.id ───── │                        │
   │                                                    │

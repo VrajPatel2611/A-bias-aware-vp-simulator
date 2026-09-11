@@ -293,7 +293,7 @@ const cover = [
   }),
   new Paragraph({
     spacing: { after: 340 },
-    children: [new TextRun({ text: "VPSim — Bias-Aware Virtual Patient Simulator", size: 24, color: TEAL, font: "Georgia" })],
+    children: [new TextRun({ text: "Nidan — Bias-Aware Virtual Patient Simulator", size: 24, color: TEAL, font: "Georgia" })],
   }),
   new Paragraph({
     spacing: { after: 420 },
@@ -325,7 +325,7 @@ const cover = [
 
 const doc = new Document({
   creator: "Vraj Patel, Yogesh Bagotia",
-  title: "VPSim — System Design & Engineering Specification",
+  title: "Nidan — System Design & Engineering Specification",
   numbering: {
     config: [{
       reference: "num",
