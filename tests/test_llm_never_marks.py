@@ -104,7 +104,7 @@ def test_no_assessment_module_imports_the_llm_gateway():
     import pathlib
     root = pathlib.Path(__file__).resolve().parent.parent
     offenders = [
-        str(py.relative_to(root))
+        py.relative_to(root).as_posix()
         for py in (root / "vpsim" / "domain" / "assessment").rglob("*.py")
         if "gateway" in py.read_text(encoding="utf-8")
         or "groq" in py.read_text(encoding="utf-8").lower()
