@@ -315,7 +315,7 @@ Accept   1. SESSION_STORE deleted entirely
 Tests    Concurrency test: 10 parallel appends produce seq 1..10 with no gaps or duplicates
 ```
 
-**T-014 · Supabase Auth integration**
+**T-014 · Supabase Auth integration** — ✅ **DONE** (2026-09-13)
 ```
 Phase    1            Depends  T-012          Est  2 d      Owner  V
 Files    nidan/api/auth.py, nidan/infra/auth/

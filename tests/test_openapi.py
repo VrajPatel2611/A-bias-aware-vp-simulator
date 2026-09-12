@@ -50,19 +50,44 @@ class TestStructure:
         missing = sorted(documented - declared)
         assert not missing, f"documented in API_CONTRACT but absent here: {missing}"
 
-    def test_every_operation_declares_501(self, api):
+    def test_an_operation_declares_501_exactly_when_it_is_not_implemented(self, api):
         """
-        Until T-030 nothing is implemented. A path that forgets 501 implies it
-        works, and a generated client would treat it as available.
+        The contract and the application must agree about what exists.
+
+        T-011 wrote this as "every operation declares 501", which was true when
+        none of them worked. T-014 implemented the first two, and the check is
+        more useful stated as an equivalence: an operation that is implemented
+        must NOT advertise 501, and one that is not implemented must. Either
+        error misleads a generated client — the first makes a working endpoint
+        look unavailable, the second makes a stub look ready.
+
+        Implementation is read from the app's own routing table rather than a
+        hand-kept list, so this cannot go stale the way the original did.
         """
-        missing = [
-            f"{method.upper()} {path}"
-            for path, item in api["paths"].items()
-            for method, op in item.items()
-            if method in ("get", "post", "patch", "delete", "put")
-            and "501" not in op.get("responses", {})
-        ]
-        assert not missing, f"no 501 declared: {missing}"
+        from nidan.app import create_app
+
+        app = create_app({"TESTING": True, "SECRET_KEY": "openapi-test"})
+        implemented = {
+            (method.lower(), str(rule).removeprefix("/v1"))
+            for rule in app.url_map.iter_rules()
+            if str(rule).startswith("/v1")
+            for method in (rule.methods or set())
+            if method not in ("HEAD", "OPTIONS")
+        }
+
+        wrong = []
+        for path, item in api["paths"].items():
+            for method, op in item.items():
+                if method not in ("get", "post", "patch", "delete", "put"):
+                    continue
+                declares_501 = "501" in op.get("responses", {})
+                is_implemented = (method, path) in implemented
+                if is_implemented and declares_501:
+                    wrong.append(f"{method.upper()} {path} is implemented but declares 501")
+                if not is_implemented and not declares_501:
+                    wrong.append(f"{method.upper()} {path} is a stub but declares no 501")
+
+        assert not wrong, "openapi.yaml disagrees with the app:\n  " + "\n  ".join(wrong)
 
     def test_every_ref_resolves(self, api):
         """A dangling $ref generates a broken client, not an error here."""

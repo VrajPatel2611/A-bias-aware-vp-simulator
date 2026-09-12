@@ -86,6 +86,22 @@ class Settings(BaseSettings):
         description="Version tag for Sentry. Defaults to the package version.",
     )
 
+    # ── authentication (T-014) ───────────────────────────────────────
+    SUPABASE_URL: str = Field(
+        default="",
+        description="Supabase project URL, e.g. https://abc123.supabase.co. "
+                    "The JWKS endpoint and the expected token issuer are both "
+                    "derived from it, so they cannot disagree.",
+    )
+    SUPABASE_JWT_AUDIENCE: str = Field(
+        default="authenticated",
+        description="The `aud` claim every user token must carry. Supabase "
+                    "issues 'authenticated'. Verified on every request: without "
+                    "an audience check, a token from ANY other Supabase project "
+                    "would pass signature verification and authenticate as "
+                    "whatever `sub` it names.",
+    )
+
     # ── the database (unused until T-012) ────────────────────────────
     DATABASE_URL: str = Field(
         default="",
@@ -199,6 +215,27 @@ class Settings(BaseSettings):
     def llm_configured(self) -> bool:
         """Whether a patient can actually reply."""
         return bool(self.GROQ_API_KEY.strip())
+
+    @property
+    def auth_configured(self) -> bool:
+        """Whether a token can be verified at all."""
+        return bool(self.SUPABASE_URL.strip())
+
+    @property
+    def jwks_url(self) -> str:
+        """
+        Where the signing keys live.
+
+        Derived rather than configured separately: two settings that must agree
+        are two settings that can disagree, and the failure would be a project
+        verifying tokens against another project's keys.
+        """
+        return f"{self.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+
+    @property
+    def jwt_issuer(self) -> str:
+        """The `iss` claim every token must carry. Derived, for the same reason."""
+        return f"{self.SUPABASE_URL.rstrip('/')}/auth/v1"
 
 
 def load_settings() -> Settings:

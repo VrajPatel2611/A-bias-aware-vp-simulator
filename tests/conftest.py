@@ -14,8 +14,11 @@ import sys
 import pytest
 import sqlalchemy as sa
 
+from nidan.config import settings
 from nidan.domain.content.cases import get_case
 from nidan.domain.session import create_session
+from nidan.infra.auth import jwks
+from tests.fakes.auth import AUDIENCE, ISSUER_URL, SigningAuthority
 from tests.fakes.llm import FakeLLM
 
 # Every domain test that needs a timestamp uses this one. Fixed, so any test
@@ -87,6 +90,34 @@ def seeded_case_slugs(pg_url) -> list:
         slugs = list(conn.execute(sa.text("SELECT slug FROM cases")).scalars())
     engine.dispose()
     return slugs
+
+
+
+# ── authentication (T-014) ───────────────────────────────────────────
+
+@pytest.fixture
+def authority(monkeypatch):
+    """
+    A signing authority whose public key the cache will serve.
+
+    `_fetch` is patched rather than the HTTP layer so the test can count
+    fetches — which is what the rotation and rate-limit tests assert on.
+    """
+    auth = SigningAuthority()
+    monkeypatch.setattr(settings, "SUPABASE_URL", ISSUER_URL)
+    monkeypatch.setattr(settings, "SUPABASE_JWT_AUDIENCE", AUDIENCE)
+
+    auth.fetches = 0
+
+    def fake_fetch(self):
+        auth.fetches += 1
+        return dict(auth.keys)
+
+    auth.keys = {auth.kid: auth.public_key}
+    monkeypatch.setattr(jwks.KeyCache, "_fetch", fake_fetch)
+    jwks.cache.clear()
+    yield auth
+    jwks.cache.clear()
 
 
 

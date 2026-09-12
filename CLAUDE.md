@@ -68,6 +68,11 @@ visible metric teaches the metric, not the skill. (`PRD` P2 · contract tests CT
 14 % sensitivity in the confirmation-bias detector. Invariant C-4 in
 `DATA_MODEL` §8.1, enforced in CI and in the case editor.
 
+**The backend never handles a password, and never trusts a token's signature
+alone.** Supabase issues credentials; we verify `aud` and `iss` as well as the
+signature, or a token from any other Supabase project authenticates here.
+(`ADR-0002` · `tests/test_auth.py`)
+
 **Session state is never held in the process.** Every handler replays the event
 log, acts, appends, and returns. There is no session dictionary, no cache, and
 nothing that survives a request — which is why the app runs on 2 gunicorn
@@ -99,6 +104,8 @@ nidan/
     feedback_view.py      the feedback screen, recomputed from the log
   infra/                everything that touches the outside world
     llm/gateway.py        the single call site for the LLM
+    auth/jwks.py          Supabase's signing keys, cached 10 min
+    auth/tokens.py        JWT verification — aud and iss, not just the signature
     db/actor.py           who is asking — decides the DB role and auth.uid()
     db/engine.py          ⚠️ the only connection pool; private to infra/db
     db/repositories/      the only place SQL is written (ADR-0016)
@@ -107,7 +114,9 @@ nidan/
       anonymous.py          ⚠️ the one path where RLS is OFF
     storage.py            session JSON read/write (the research export)
     feedback.py           calls the gateway with domain-built prompts
-  api/routes.py         Flask blueprint "web"
+  api/routes.py         Flask blueprint "web" — the prototype
+  api/v1.py             the JSON API at /v1 (ADR-0006)
+  api/auth.py           @require_auth · @require_tier('pro')
   web/                  templates and static assets
   app.py                create_app() factory · __main__.py runs it
 
@@ -139,7 +148,7 @@ pip install -e .                   # once, after cloning
 
 python -m nidan                    # run the app (needs GROQ_API_KEY in .env)
 docker compose up --build          # app + Postgres 16/pgvector on a clean machine
-pytest                             # 433 tests (see docs/spec/TEST_STRATEGY.md)
+pytest                             # 468 tests (see docs/spec/TEST_STRATEGY.md)
 ruff check . --fix                 # style
 mypy nidan/domain --strict         # types (domain only)
 lint-imports                       # check the domain/infra/api layering contract
@@ -151,7 +160,7 @@ python scripts/build_status.py     # regenerate docs/build-log/STATUS.md
 # database (T-010) — needs the stack up: docker compose up -d db
 alembic upgrade head               # apply all 21 migrations
 alembic downgrade base             # tear the schema down
-pytest tests/db -q --no-cov        # 103 schema, repository and route tests, real Postgres
+pytest tests/db -q --no-cov        # 121 schema, repository and route tests, real Postgres
 ```
 
 ---

@@ -33,6 +33,9 @@ A-bias-aware-vp-simulator/
 │   │   └── types.py              shared type aliases
 │   ├── infra/              everything touching the outside world
 │   │   ├── llm/gateway.py        the ONE place we call a model
+│   │   ├── auth/ ★                JWKS cache + token verification
+│   │   │   ├── jwks.py             cached 10 min; rotation handled
+│   │   │   └── tokens.py           aud + iss, not just the signature
 │   │   ├── db/ ★                 the ONE place we reach the database
 │   │   │   ├── actor.py            who is asking — picks the DB role
 │   │   │   ├── engine.py         ⚠ the only pool; private to infra/db
@@ -49,17 +52,20 @@ A-bias-aware-vp-simulator/
 │   │   ├── storage.py            the research JSON export
 │   │   ├── clock.py              the injected clock
 │   │   └── feedback.py           calls the gateway
-│   ├── api/routes.py       Flask blueprint — 9 routes
+│   ├── api/routes.py       Flask blueprint — the prototype
+│   ├── api/v1.py           the JSON API at /v1 (T-014)
+│   ├── api/auth.py ★       @require_auth · @require_tier('pro')
 │   ├── web/                templates and static files
 │   ├── config.py           typed settings, validated at boot
 │   └── app.py              create_app() · __main__.py runs it
 │
-├── tests/ ★                433 tests
+├── tests/ ★                468 tests
 │   ├── conftest.py               fixtures + the no-network guard
 │   ├── fakes/llm.py              the fake model
 │   ├── domain/                   unit + property tests
 │   ├── db/                       real Postgres in a container
 │   │   ├── test_routes.py ★        a consultation, end to end
+│   │   ├── test_auth_routes.py ★   the authenticated API
 │   │   ├── test_event_concurrency.py ★ 10 parallel appends → seq 1..10
 │   │   ├── test_constraints.py     CHECK constraints and indexes
 │   │   ├── test_triggers.py        append-only, publication gate
@@ -68,6 +74,7 @@ A-bias-aware-vp-simulator/
 │   │   ├── test_repository_scope.py ★ the policies deny the APPLICATION
 │   │   └── test_anonymous_scope.py ★ the path where RLS cannot help
 │   ├── domain/test_replay.py ★   derived state is reproducible
+│   ├── test_auth.py ★            tokens, without Supabase or Docker
 │   ├── test_case_invariants.py   C-1 … C-9 on the case content
 │   ├── test_llm_never_marks.py ★ proves property P1
 │   ├── test_layering.py          proves domain/ stays pure

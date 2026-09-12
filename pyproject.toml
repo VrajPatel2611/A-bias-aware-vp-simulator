@@ -12,6 +12,11 @@ dependencies = [
     "sqlalchemy>=2.0",
     "alembic>=1.13",
     "psycopg[binary]>=3.1",
+    # JWT verification against Supabase's JWKS (ADR-0002, T-014). The [crypto]
+    # extra pulls in `cryptography`, which is what verifies an RS256/ES256
+    # signature — without it PyJWT silently supports only HMAC, and the
+    # asymmetric path this depends on raises at runtime rather than at install.
+    "pyjwt[crypto]>=2.9",
 ]
 
 [project.optional-dependencies]
