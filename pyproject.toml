@@ -81,3 +81,15 @@ name = "domain must not import infra or api"
 type = "forbidden"
 source_modules = ["nidan.domain"]
 forbidden_modules = ["nidan.infra", "nidan.api", "nidan.app"]
+
+# T-012. The engine is the only source of an unscoped connection, so keeping
+# its import surface inside nidan.infra.db is what makes repo_scope the only
+# door into the database rather than merely the front one.
+# tests/test_db_access.py checks the same thing locally and more thoroughly.
+[[tool.importlinter.contracts]]
+name = "only infra.db may reach the connection pool"
+type = "forbidden"
+source_modules = ["nidan.domain", "nidan.api", "nidan.app", "nidan.infra.llm",
+                  "nidan.infra.telemetry", "nidan.infra.storage",
+                  "nidan.infra.feedback", "nidan.infra.session_store"]
+forbidden_modules = ["nidan.infra.db.engine"]

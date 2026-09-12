@@ -57,7 +57,7 @@ writes it.
 
 ## 3 · The kinds of test we use
 
-Five kinds, each answering a different question. The last column is the
+Six kinds, each answering a different question. The last column is the
 important one.
 
 | Kind | The question it answers | Cost to run | **What it cannot catch** |
@@ -67,9 +67,21 @@ important one.
 | **Unit** | Does this function compute the right answer? | fast | Whether the pieces work together. Every unit can pass while the app is broken. |
 | **Contract** | Does the system honour a promise we made to users? | seconds | Promises nobody wrote down. |
 | **Validation** | Is the research claim still true? | ~2 s | Whether 94% is *good enough*. That is a clinical judgement, not a test result. |
+| **Integration** | Does the database enforce what we think it enforces? | ~6 s, needs Docker | Anything above the query. And it **skips** when Docker is absent, so a guard that lives only here is untested on those runs (`tests/test_db_actor.py` exists for that reason). |
 
-**Today the repository has smoke, structural and validation.** Unit and contract
-arrive with T-002 and T-004. §8 says exactly what is missing and when it lands.
+**All six kinds now exist.** Unit and contract arrived with T-002 and T-004;
+integration with T-010, which starts a real PostgreSQL 16 in a container because
+every guarantee it checks — partial unique indexes, CHECK constraints,
+append-only triggers, the publication gate, Row-Level Security — is a PostgreSQL
+feature that would be tested nowhere else. T-012 extended it from "the policies
+are written correctly" to "the policies deny the application". §8 tracks what is
+still missing.
+
+**Two of these kinds exist to check each other.** The structural tests
+(`test_layering.py`, `test_db_access.py`) prove nobody *wrote* a bypass; the
+integration tests prove the database would *refuse* one anyway. Either alone is
+a single point of failure — a correct policy that never applies looks exactly
+like a working system.
 
 ### Why not "just write more tests"
 
