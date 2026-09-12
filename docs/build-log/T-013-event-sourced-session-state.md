@@ -28,7 +28,7 @@ migration 021               the four RLS policies DATA_MODEL §10.1 left out
 Dockerfile                  --workers 1 → 2
 ```
 
-**34 new tests.** 430 pass, 98.9 % coverage on the domain.
+**37 new tests.** 433 pass, 98.9 % coverage on the domain.
 
 The line this task existed to change, in the Dockerfile, had been waiting for it:
 
@@ -151,6 +151,9 @@ database. Rather than put the whole smoke file behind a container, they moved to
 routes that read no session state, and still runs in under a second with nothing
 installed.
 
+**`FLASK_SECRET_KEY` became mandatory in production.** Not in the task
+description; it is a direct consequence of raising the worker count. See §6.
+
 **`pid` was added to the JSON log.** Criterion 5 is about which worker served
 what, and the log could not answer that question. It is a standard field for a
 multi-worker deployment, and it is what made §7 verifiable rather than assumed.
@@ -191,7 +194,7 @@ Verified by dropping a policy and watching it fire.
 
 ---
 
-## 6 · Two tests that passed for the wrong reason
+## 6 · Three tests that passed for the wrong reason
 
 Both were found by deliberately breaking what they guard — the same practice
 T-012 adopted, and the second time it has paid.
@@ -216,12 +219,49 @@ found nothing wrong.
 `pytest.raises(Exception)` cannot tell "the thing I meant happened" from
 "something else did". Now `pytest.raises(IntegrityError)`.
 
+**The restart test passed off a developer's `.env`, and CI caught it** — the
+third instance, and the only one I did not find myself:
+
+```
+FAILED tests/db/test_routes.py::test_a_consultation_survives_losing_the_process
+assert 400 == 200
+```
+
+The test builds a second application and hands it the first one's cookie. It set
+`FLASK_SECRET_KEY` with `monkeypatch.setenv` — which does nothing, because
+`settings` is a module-level singleton read at import. Locally the key came from
+my `.env`, both applications shared it, and the test passed. On a runner with no
+`.env`, each `create_app` fell back to `os.urandom(24)` and the second could not
+read the first's cookie.
+
+**The test bug was hiding a real one.** `app.py` has always had that fallback,
+and gunicorn imports the application separately in each worker — so with the
+`--workers 2` this very task introduced, an unset `FLASK_SECRET_KEY` means every
+worker signs session cookies with a different secret and rejects the others'.
+The learner is thrown out of their consultation on roughly half their requests,
+with nothing in the logs to explain it.
+
+At `--workers 1` that setting was merely inconvenient: sessions did not survive
+a restart. **Raising the worker count is what turned it into a broken
+application**, so the fix belongs to the task that raised it:
+
+* `config.py` now refuses to start a **production** environment without a key,
+  with a message that says why. Development and tests keep the random fallback.
+* `create_app` accepts `SECRET_KEY` in its config dict, so a test that builds
+  two applications can pin it explicitly rather than depend on an environment
+  variable it cannot actually set.
+
+This is the third time CI has caught something that passed locally because of
+one machine's state — after `setuptools` in T-004 and `pip` in T-011. The
+pattern is identical every time: *the developer's environment supplies
+something the specification never required.*
+
 ---
 
 ## 7 · Verification
 
 ```
-pytest                          430 passed        (was 396)
+pytest                          433 passed        (was 396)
 pytest tests/db -q --no-cov     103 passed        (was 82)
 ruff check .                    All checks passed
 mypy nidan/domain --strict      Success: no issues found in 12 source files

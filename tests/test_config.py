@@ -93,6 +93,37 @@ class TestPlaceholderRejection:
         import secrets
         assert _settings(FLASK_SECRET_KEY=secrets.token_hex(32)).FLASK_SECRET_KEY
 
+    def test_production_refuses_to_start_without_a_secret(self):
+        """
+        Added in T-013, because that task is what made it dangerous.
+
+        `app.py` falls back to `os.urandom(24)` when the key is empty, and
+        gunicorn imports the application separately in each worker. At
+        `--workers 1` that meant sessions did not survive a restart. At 2 it
+        means each worker signs cookies with a different secret and rejects the
+        other's — the learner is thrown out of their consultation on roughly
+        half their requests, with nothing in the logs to explain it.
+
+        CI found the same fallback the cheap way, as a test that passed locally
+        off a developer's `.env` and failed on a runner that had none.
+        """
+        with pytest.raises(ValidationError, match="each gunicorn worker"):
+            _settings(ENVIRONMENT="production", FLASK_SECRET_KEY="")
+
+    def test_development_and_test_keep_the_random_fallback(self):
+        """
+        Only production refuses. Requiring a key locally would mean every
+        contributor had to generate one before the app would start, to protect
+        them from a multi-worker deployment they are not running.
+        """
+        for env in ("development", "test", "staging"):
+            assert _settings(ENVIRONMENT=env, FLASK_SECRET_KEY="").ENVIRONMENT == env
+
+    def test_production_starts_with_a_secret(self):
+        import secrets
+        assert _settings(ENVIRONMENT="production",
+                         FLASK_SECRET_KEY=secrets.token_hex(32)).is_production
+
 
 class TestFailureMessages:
     def test_the_message_names_the_offending_variable(self):

@@ -20,12 +20,28 @@ import sqlalchemy as sa
 
 from nidan.app import create_app
 
+# Every application these tests build signs its session cookies with this.
+#
+# It is passed as config rather than set as an environment variable, and that
+# distinction is what CI caught: `settings` is a module-level singleton read at
+# import, so `monkeypatch.setenv` after import changes nothing. Locally the key
+# came from a developer's `.env` and the tests passed; on a runner with no
+# `.env` each `create_app` fell back to `os.urandom(24)`, so the second
+# application could not read the first one's cookie.
+#
+# The same fallback is a real hazard in production now that T-013 raised the
+# worker count — gunicorn imports the app separately per worker — which is why
+# `config.py` refuses to start a production environment without a key.
+TEST_SECRET = "t013-tests-fixed-secret"
+
+
+def _app():
+    return create_app({"TESTING": True, "SECRET_KEY": TEST_SECRET})
+
 
 @pytest.fixture
-def client(live_db, fake_llm, monkeypatch):
-    monkeypatch.setenv("FLASK_SECRET_KEY", "test-secret")
-    app = create_app({"TESTING": True})
-    return app.test_client()
+def client(live_db, fake_llm):
+    return _app().test_client()
 
 
 def _start(client, case_id="case_1"):
@@ -122,7 +138,7 @@ def test_a_second_early_diagnosis_is_not_recorded_twice(client, live_db):
 
 # ── criterion 4: nothing is held in the process ──────────────────────
 
-def test_a_consultation_survives_losing_the_process(client, live_db, monkeypatch):
+def test_a_consultation_survives_losing_the_process(client, live_db):
     """
     Criterion 4: killing the process mid-consultation loses nothing.
 
@@ -143,8 +159,7 @@ def test_a_consultation_survives_losing_the_process(client, live_db, monkeypatch
     # The process dies.
     engine_mod.dispose_engine()
 
-    monkeypatch.setenv("FLASK_SECRET_KEY", "test-secret")
-    reborn = create_app({"TESTING": True}).test_client()
+    reborn = _app().test_client()
     reborn.set_cookie("session", cookie.value)
 
     # And the consultation continues where it left off.
@@ -157,14 +172,13 @@ def test_a_consultation_survives_losing_the_process(client, live_db, monkeypatch
     assert reborn.get("/feedback").status_code == 200
 
 
-def test_two_clients_do_not_share_a_consultation(client, live_db, monkeypatch):
+def test_two_clients_do_not_share_a_consultation(client, live_db):
     """
     Criterion 5 as a property rather than a deployment: with state in the
     database and nothing in the process, two concurrent browsers cannot bleed
     into each other. This is what "no session bleed across workers" means.
     """
-    monkeypatch.setenv("FLASK_SECRET_KEY", "test-secret")
-    other = create_app({"TESTING": True}).test_client()
+    other = _app().test_client()
 
     _start(client)
     _start(other, case_id="case_2")

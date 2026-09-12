@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import sys
 
-from pydantic import Field, ValidationError, field_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,8 +53,10 @@ class Settings(BaseSettings):
     # ── the web application ──────────────────────────────────────────
     FLASK_SECRET_KEY: str = Field(
         default="",
-        description="Signs browser session cookies. Empty means a random key is "
-                    "generated at start-up, so sessions do not survive a restart.",
+        description="Signs browser session cookies. Empty means a random key "
+                    "per process — which since T-013 means per gunicorn WORKER, "
+                    "so workers reject each other's sessions. Required in "
+                    "production; see _require_a_secret_in_production below.",
     )
     PORT: int = Field(default=8000, ge=1, le=65535)
     DEBUG: bool = Field(
@@ -134,6 +136,34 @@ class Settings(BaseSettings):
                 "patient."
             )
         return v
+
+    @model_validator(mode="after")
+    def _require_a_secret_in_production(self) -> Settings:
+        """
+        Production must set a real key. This became a hard requirement in T-013.
+
+        `app.py` falls back to `os.urandom(24)` when the key is empty, and
+        gunicorn imports the application separately in each worker — so with
+        `--workers 2` every worker signs session cookies with a different
+        secret and rejects the cookies the other one issued. The learner sees
+        "No active session" at random, on roughly half their requests, with
+        nothing in the logs to explain it.
+
+        At `--workers 1` the same setting was merely inconvenient: sessions did
+        not survive a restart. Raising the worker count is what turned it into
+        a broken application, so the check belongs to the task that raised it.
+
+        Development and tests keep the random fallback; only production
+        refuses.
+        """
+        if self.ENVIRONMENT == "production" and not self.FLASK_SECRET_KEY.strip():
+            raise ValueError(
+                "FLASK_SECRET_KEY must be set in production: without it each "
+                "gunicorn worker signs session cookies with its own random key "
+                "and rejects the others'. Generate one with "
+                "python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return self
 
     @field_validator("FLASK_SECRET_KEY")
     @classmethod

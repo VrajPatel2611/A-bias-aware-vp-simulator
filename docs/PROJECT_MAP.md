@@ -54,7 +54,7 @@ A-bias-aware-vp-simulator/
 │   ├── config.py           typed settings, validated at boot
 │   └── app.py              create_app() · __main__.py runs it
 │
-├── tests/ ★                430 tests
+├── tests/ ★                433 tests
 │   ├── conftest.py               fixtures + the no-network guard
 │   ├── fakes/llm.py              the fake model
 │   ├── domain/                   unit + property tests
