@@ -31,6 +31,16 @@ A-bias-aware-vp-simulator/
 │   │   └── types.py              shared type aliases
 │   ├── infra/              everything touching the outside world
 │   │   ├── llm/gateway.py        the ONE place we call a model
+│   │   ├── db/ ★                 the ONE place we reach the database
+│   │   │   ├── actor.py            who is asking — picks the DB role
+│   │   │   ├── engine.py         ⚠ the only pool; private to infra/db
+│   │   │   ├── models.py           MetaData only, deliberately no tables
+│   │   │   └── repositories/       the only place SQL is written
+│   │   │       ├── base.py ★         repo_scope() — SET LOCAL ROLE, auth.uid()
+│   │   │       ├── profiles.py       the actor's own profile
+│   │   │       ├── sessions.py       consultations, scoped by RLS
+│   │   │       ├── cases.py          published content, read-only
+│   │   │       └── anonymous.py ⚠    the one path with RLS OFF
 │   │   ├── telemetry/            JSON logs, redaction, Sentry
 │   │   ├── storage.py            session JSON read/write
 │   │   ├── clock.py              the injected clock
@@ -41,13 +51,22 @@ A-bias-aware-vp-simulator/
 │   ├── config.py           typed settings, validated at boot
 │   └── app.py              create_app() · __main__.py runs it
 │
-├── tests/ ★                293 tests
+├── tests/ ★                396 tests
 │   ├── conftest.py               fixtures + the no-network guard
 │   ├── fakes/llm.py              the fake model
 │   ├── domain/                   unit + property tests
+│   ├── db/                       real Postgres in a container
+│   │   ├── test_constraints.py     CHECK constraints and indexes
+│   │   ├── test_triggers.py        append-only, publication gate
+│   │   ├── test_rls.py             the policies are written correctly
+│   │   ├── test_seed.py            migrations 017-019 seeded the content
+│   │   ├── test_repository_scope.py ★ the policies deny the APPLICATION
+│   │   └── test_anonymous_scope.py ★ the path where RLS cannot help
 │   ├── test_case_invariants.py   C-1 … C-9 on the case content
 │   ├── test_llm_never_marks.py ★ proves property P1
 │   ├── test_layering.py          proves domain/ stays pure
+│   ├── test_db_access.py ★       proves no query bypasses the repositories
+│   ├── test_db_actor.py          the actor guards, without Docker
 │   └── test_validation_gate.py   proves the 94% gate actually fails
 │
 ├── docs/                   see §2–§6 below

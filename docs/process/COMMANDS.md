@@ -264,6 +264,76 @@ Rebuild from scratch. For when you suspect a stale layer.
 
 ---
 
+## 6a · The database
+
+Added by T-010 (schema) and T-012 (the repository layer). The schema lives in
+`migrations/versions/` as 20 hand-written Alembic migrations — those files are
+the source of truth, not any Python model.
+
+```bash
+docker compose up -d db
+```
+
+Start the database on its own. The app is not needed to run migrations or the
+schema tests, and starting only `db` is quicker.
+
+```bash
+alembic upgrade head
+```
+
+Apply every migration in order. Needs `DATABASE_URL` set — `.env` is enough.
+Running it twice is safe: Alembic records which revisions are applied.
+
+```bash
+alembic downgrade base
+```
+
+Tear the whole schema down. Every migration has a working `downgrade`, and
+`tests/db/test_migrations.py` proves it by going down and back up.
+
+```bash
+alembic current
+alembic history
+```
+
+Which revision the database is on, and the full list.
+
+```bash
+pytest tests/db -q --no-cov
+```
+
+81 tests against a real PostgreSQL 16 started in a container — constraints,
+triggers, RLS policies, the seeded content, and the repository layer. Slower
+than the rest of the suite because it starts a container and runs 20
+migrations; skips rather than fails when Docker is not running.
+
+```bash
+docker compose exec db psql -U nidan -d nidan
+```
+
+A psql prompt inside the container. `\dt` lists tables, `\d sessions`
+describes one, `\q` quits.
+
+### Reading data as the application sees it
+
+The application never issues a bare query. Everything goes through
+`repo_scope(actor)`, which assumes a non-superuser role and sets `auth.uid()`
+for the transaction (`ADR-0016`). In a REPL:
+
+```python
+from uuid import UUID
+from nidan.infra.db.repositories import repo_scope, AuthenticatedUser
+
+with repo_scope(AuthenticatedUser(UUID("..."))) as db:
+    print(db.sessions.recent())
+```
+
+A psql prompt, by contrast, connects as the owner and is exempt from every
+policy — which is exactly why it is useful for inspecting and useless for
+checking isolation. To see what a *user* can see, use the scope.
+
+---
+
 ## 7 · Things that go wrong, and the fix
 
 ### `zsh: command not found: docker`
@@ -341,6 +411,36 @@ find . -name __pycache__ -not -path "./venv/*" -exec rm -rf {} +
 
 Restore files with `git checkout` rather than `cp` and this does not happen.
 
+### `DATABASE_URL is not set, so no repository can open a transaction`
+
+The repository layer refuses to build an engine without a URL rather than
+failing later with a connection error. Start the database and make sure `.env`
+has the line from `.env.example`:
+
+```bash
+docker compose up -d db
+```
+
+### `permission denied for table case_versions`
+
+Working as intended. Migration 020 grants the application role `SELECT` on
+clinical content and nothing else — cases change through the case editor after
+a clinical review, never through a learner's request. If you genuinely need to
+write content, use a `ServiceActor` and say why in its `reason`.
+
+### An RLS test passes but you suspect it should not
+
+Check what role the query actually ran as:
+
+```python
+db.conn.execute(sa.text("SELECT current_user")).scalar()
+```
+
+If that is anything but `nidan_app`, the policies were not applied — PostgreSQL
+exempts superusers and the table owner from all of them. This is the single
+most common way to get a green test that proves nothing, which is why
+`test_the_scope_runs_as_nidan_app_which_cannot_bypass_rls` exists.
+
 ### `FAIL: detector accuracy 92.6% is below the required 94%`
 
 A change degraded the detectors. **Do not lower the threshold.** Look at what
@@ -370,4 +470,4 @@ docker compose up --build
 
 ---
 
-*Last updated 6 September 2026, after Phase 0.*
+*Last updated 12 September 2026, after T-012.*

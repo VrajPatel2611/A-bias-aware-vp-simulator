@@ -292,7 +292,7 @@ Done     Migrations 017 (27/86/40/523 seeded), 018 (engine 1.0.0), 019 (5 cases
          seeded cases. Yogesh can now generate a client and start T-032.
 ```
 
-**T-012 · Repository layer and tenant scoping**
+**T-012 · Repository layer and tenant scoping** — ✅ **DONE** (2026-09-12)
 ```
 Phase    1            Depends  T-010          Est  2 d      Owner  V
 Files    nidan/infra/db/repositories/

@@ -194,3 +194,88 @@ def make_case_version(db, make_case):
                "status": status, "content_hash": hashlib.md5(vid.bytes).hexdigest()})
         return vid
     return _make
+
+
+# ── T-012: fixtures for tests that go through the application's own pool ──
+#
+# The `db` fixture above hands out a connection and rolls it back. Repository
+# tests cannot use it: `repo_scope` opens its own connection from
+# `nidan.infra.db.engine` and commits, which is the whole point -- a test that
+# borrowed the fixture's transaction would be testing a connection the
+# application never uses, with the migrating role's privileges, and RLS would
+# be exempt exactly as it is for the migration.
+
+@pytest.fixture
+def app_db(pg_url, seeded_case_slugs, monkeypatch):
+    """
+    Point the application's engine at the test container, and clean up after.
+
+    Yields an admin engine for the setup that must bypass the layer being
+    tested -- creating `auth.users` rows, which belongs to Supabase Auth in
+    production and to no repository here.
+    """
+    from nidan.config import settings
+    from nidan.infra.db import engine as engine_mod
+
+    monkeypatch.setattr(settings, "DATABASE_URL", pg_url)
+    engine_mod.dispose_engine()          # drop any pool built against another URL
+
+    admin = sa.create_engine(pg_url)
+    yield admin
+
+    # Dispose first: TRUNCATE waits behind any connection still holding a lock,
+    # and a leaked scope would hang the suite rather than fail it.
+    engine_mod.dispose_engine()
+    with admin.begin() as c:
+        # _DATA_TABLES, not a second hand-written list: `llm_calls` references
+        # `sessions`, so a shorter list fails outright -- and the next table
+        # added would fail the same way in whichever test ran next, which is
+        # precisely the T-010 bug this file already carries a scar from.
+        c.exec_driver_sql("TRUNCATE " + ", ".join(_DATA_TABLES))
+        c.exec_driver_sql(
+            "DELETE FROM case_versions WHERE case_id IN "
+            "(SELECT id FROM cases WHERE slug <> ALL(%s))", (seeded_case_slugs,))
+        c.exec_driver_sql(
+            "DELETE FROM cases WHERE slug <> ALL(%s)", (seeded_case_slugs,))
+        c.exec_driver_sql("DELETE FROM profiles")
+        c.exec_driver_sql("DELETE FROM auth.users")
+    admin.dispose()
+
+
+@pytest.fixture
+def make_account(app_db):
+    """
+    A user that exists in `auth.users` but has no profile yet.
+
+    Separate from `make_user` above because these tests create the profile
+    *through* the repository -- that is one of the things being tested.
+    """
+    def _make() -> uuid.UUID:
+        uid = uuid.uuid4()
+        with app_db.begin() as c:
+            c.execute(sa.text("INSERT INTO auth.users (id) VALUES (:id)"), {"id": uid})
+        return uid
+    return _make
+
+
+@pytest.fixture
+def published_case(app_db):
+    """A published case version, since migration 019 seeds only drafts."""
+    def _make(slug: str | None = None, status: str = "published") -> uuid.UUID:
+        cid, vid = uuid.uuid4(), uuid.uuid4()
+        slug = slug or f"scope-test-{cid.hex[:8]}"
+        with app_db.begin() as c:
+            c.execute(sa.text("INSERT INTO cases (id, slug) VALUES (:id, :slug)"),
+                      {"id": cid, "slug": slug})
+            c.execute(sa.text("""
+                INSERT INTO case_versions (
+                    id, case_id, version, status, content, title, anchor_topic,
+                    minimum_questions, required_topic_count,
+                    key_investigation_count, content_hash, published_at)
+                VALUES (:id, :case_id, 1, CAST(:status AS case_status), '{}'::jsonb,
+                        'Scope test case', 'cardiac', 7, 8, 4, :hash,
+                        CASE WHEN :status = 'published' THEN now() END)
+            """), {"id": vid, "case_id": cid, "status": status,
+                   "hash": hashlib.md5(vid.bytes).hexdigest()})
+        return vid
+    return _make

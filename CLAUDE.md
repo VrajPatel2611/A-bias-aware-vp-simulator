@@ -18,7 +18,7 @@ read only those sections.
 |---|---|
 | Anything at all | This file, then `docs/PROJECT_MAP.md` |
 | What is every file in here? | `docs/PROJECT_MAP.md` — the full tree, annotated |
-| Why was X chosen? | `docs/spec/adr/` — 15 one-page records. **Check here before re-arguing a decision** |
+| Why was X chosen? | `docs/spec/adr/` — 16 one-page records. **Check here before re-arguing a decision** |
 | Building a feature | `docs/spec/BUILD_PLAN.md` → find the task → read only its `Spec` refs |
 | Schema / migration | `docs/spec/DATA_MODEL.md` — the relevant table section only |
 | An endpoint | `docs/spec/API_CONTRACT.md` §4–9 + `openapi.yaml` |
@@ -68,6 +68,11 @@ visible metric teaches the metric, not the skill. (`PRD` P2 · contract tests CT
 14 % sensitivity in the confirmation-bias detector. Invariant C-4 in
 `DATA_MODEL` §8.1, enforced in CI and in the case editor.
 
+**Never open a database connection outside `infra/db`.** Every query runs inside
+`repo_scope(actor)`, which assumes a non-superuser role and sets `auth.uid()` for
+the transaction. A connection obtained any other way runs with RLS exempt, and
+nothing about it looks wrong. (`ADR-0016` · `tests/test_db_access.py`)
+
 **Detector accuracy must stay ≥ 94 %.** `validate_detectors.py` runs in CI and
 fails the build below that. Do not "fix" a detector without re-running it.
 
@@ -86,6 +91,11 @@ nidan/
     feedback.py           feedback prompt construction (prose only, no marking)
   infra/                everything that touches the outside world
     llm/gateway.py        the single call site for the LLM
+    db/actor.py           who is asking — decides the DB role and auth.uid()
+    db/engine.py          ⚠️ the only connection pool; private to infra/db
+    db/repositories/      the only place SQL is written (ADR-0016)
+      base.py               repo_scope(actor) — SET LOCAL ROLE + set_config
+      anonymous.py          ⚠️ the one path where RLS is OFF; four methods
     storage.py            session JSON read/write
     session_store.py      ⚠️ in-memory store, replaced by T-013
     feedback.py           calls the gateway with domain-built prompts
@@ -94,8 +104,10 @@ nidan/
   app.py                create_app() factory · __main__.py runs it
 
 tests/                  test_smoke.py (routes) · test_layering.py (ADR-0009)
+                        test_db_access.py (no query bypasses the repositories)
   db/                   schema tests — constraints, triggers, RLS (real Postgres)
-migrations/versions/    16 hand-written Alembic migrations ← the schema's source of truth
+                        test_repository_scope.py · test_anonymous_scope.py
+migrations/versions/    20 hand-written Alembic migrations ← the schema's source of truth
 docs/build-log/         what was actually built, one doc per finished task
 docs/spec/              the build contract — 6 docs + adr/  ← the source of truth
 docs/design/            superseded design docs (historical)
@@ -119,7 +131,7 @@ pip install -e .                   # once, after cloning
 
 python -m nidan                    # run the app (needs GROQ_API_KEY in .env)
 docker compose up --build          # app + Postgres 16/pgvector on a clean machine
-pytest                             # 231 tests (see docs/spec/TEST_STRATEGY.md)
+pytest                             # 396 tests (see docs/spec/TEST_STRATEGY.md)
 ruff check . --fix                 # style
 mypy nidan/domain --strict         # types (domain only)
 lint-imports                       # check the domain/infra/api layering contract
@@ -129,9 +141,9 @@ python test_api.py                 # check the LLM key works
 python scripts/build_status.py     # regenerate docs/build-log/STATUS.md
 
 # database (T-010) — needs the stack up: docker compose up -d db
-alembic upgrade head               # apply all 16 migrations
+alembic upgrade head               # apply all 20 migrations
 alembic downgrade base             # tear the schema down
-pytest tests/db -q --no-cov        # 37 schema tests, real Postgres in a container
+pytest tests/db -q --no-cov        # 81 schema and repository tests, real Postgres
 ```
 
 ---
