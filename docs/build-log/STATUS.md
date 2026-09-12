@@ -7,7 +7,7 @@
 | **Tasks complete** | **9 of 34** (26%) |
 | **Effort** | 13 d done · 70 d remaining |
 | **Branch** | `feat/seed-content-and-openapi` |
-| **Last commit** | `a0c6cbe Merge pull request #9 from VrajPatel2611/docs/decide-d9` |
+| **Last commit** | `9a14faa feat(db): seed content and openapi.yaml (T-011)` |
 
 Estimates are engineering effort only. They do not include the clinical content authoring that `BUILD_PLAN` §11.1 rates the real critical path — see the last section.
 
@@ -46,7 +46,7 @@ Estimates are engineering effort only. They do not include the clinical content 
 | | Task | Owner | Est | Depends | Build log |
 |---|---|---|---|---|---|
 | ✅ | **T-010** · Schema and migrations | Vraj | 3 d | T-005 | [T-010](T-010-schema-and-migrations.md) |
-| ✅ | **T-011** · Seed content and openapi.yaml skeleton ⭐ | Vraj | 2 d | T-010 | — |
+| ✅ | **T-011** · Seed content and openapi.yaml skeleton ⭐ | Vraj | 2 d | T-010 | [T-011](T-011-seed-content-and-openapi.md) |
 | ⬜ | **T-012** · Repository layer and tenant scoping | Vraj | 2 d | T-010 | — |
 | ⬜ | **T-013** · Event-sourced session state ⭐ | Vraj | 3 d | T-012 | — |
 | ⬜ | **T-014** · Supabase Auth integration | Vraj | 2 d | T-012 | — |
