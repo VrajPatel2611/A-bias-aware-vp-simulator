@@ -1,0 +1,163 @@
+"""
+T-011 · openapi.yaml is valid, and honest about the contract.
+
+This file is what the frontend generates its client from (sync point S-1), so
+an error here costs Yogesh rework rather than costing us a red test. These
+checks are cheap and the failure mode is expensive.
+
+Two of them guard product guarantees rather than syntax: assessment state must
+not be exposed during a consultation, and bias vocabulary must not appear in
+any response. Those are CT-1, CT-2 and CT-5 in API_CONTRACT §11, and the schema
+is where they are easiest to break by accident.
+"""
+
+from __future__ import annotations
+
+import pathlib
+
+import pytest
+
+yaml = pytest.importorskip("yaml")
+
+SPEC = pathlib.Path(__file__).resolve().parent.parent / "openapi.yaml"
+
+
+@pytest.fixture(scope="module")
+def api() -> dict:
+    return yaml.safe_load(SPEC.read_text(encoding="utf-8"))
+
+
+class TestStructure:
+    def test_it_parses(self, api):
+        assert api["openapi"].startswith("3.")
+
+    def test_every_documented_endpoint_is_present(self, api):
+        """
+        Cross-checked against API_CONTRACT's own headings, so an endpoint added
+        to the contract and forgotten here is caught rather than discovered by
+        whoever generates the client.
+        """
+        import re
+
+        contract = (SPEC.parent / "docs" / "spec" / "API_CONTRACT.md").read_text(
+            encoding="utf-8")
+        documented = {
+            m.group(2) for m in re.finditer(
+                r"^## `(GET|POST|PATCH|DELETE|PUT) (/v1[^`]*)`", contract, re.M)
+        }
+        # Normalise: the spec writes /v1/... , the file's servers carry the /v1.
+        declared = {"/v1" + p for p in api["paths"]}
+        missing = sorted(documented - declared)
+        assert not missing, f"documented in API_CONTRACT but absent here: {missing}"
+
+    def test_every_operation_declares_501(self, api):
+        """
+        Until T-030 nothing is implemented. A path that forgets 501 implies it
+        works, and a generated client would treat it as available.
+        """
+        missing = [
+            f"{method.upper()} {path}"
+            for path, item in api["paths"].items()
+            for method, op in item.items()
+            if method in ("get", "post", "patch", "delete", "put")
+            and "501" not in op.get("responses", {})
+        ]
+        assert not missing, f"no 501 declared: {missing}"
+
+    def test_every_ref_resolves(self, api):
+        """A dangling $ref generates a broken client, not an error here."""
+        import re
+
+        refs = set(re.findall(r"#/components/(\w+)/(\w+)", SPEC.read_text(encoding="utf-8")))
+        for section, name in refs:
+            assert name in api["components"].get(section, {}), \
+                f"unresolved $ref: #/components/{section}/{name}"
+
+
+class TestProductGuarantees:
+    """The two rules from CLAUDE.md that are easiest to break in a schema."""
+
+    def test_no_bias_vocabulary_in_field_names_or_values(self, api):
+        """
+        PRD P1 / CT-5. A field named `anchoring_score`, or an enum value
+        `premature_closure`, puts the word in front of a learner through the
+        generated client without anyone writing it into the UI.
+
+        Scoped to NAMES and VALUES, not prose. A `description` that explains
+        why the rule exists is developer documentation and is the right place
+        for the vocabulary — stripping it would lose the reason and make the
+        constraint look arbitrary to whoever reads the schema next.
+        """
+        banned = ("anchoring", "premature_closure", "premature closure",
+                  "confirmation_bias", "confirmation bias")
+        offenders: list[str] = []
+
+        def walk(node, path=""):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    # Skip prose; check the key itself and any enum values.
+                    if k in ("description", "summary", "example"):
+                        continue
+                    if any(b in str(k).lower() for b in banned):
+                        offenders.append(f"{path}.{k} (field name)")
+                    if k == "enum":
+                        for value in v:
+                            if any(b in str(value).lower() for b in banned):
+                                offenders.append(f"{path}.enum = {value!r}")
+                    walk(v, f"{path}.{k}")
+            elif isinstance(node, list):
+                for i, item in enumerate(node):
+                    walk(item, f"{path}[{i}]")
+
+        walk(api)
+        assert not offenders, (
+            "bias vocabulary in field names or values:\n  "
+            + "\n  ".join(offenders)
+            + "\nUser-facing headings are 'Diagnostic focus / History "
+              "completeness / Evidence exploration'."
+        )
+
+    def test_the_session_schema_exposes_no_assessment_state(self, api):
+        """
+        PRD P2 / CT-1, CT-2. A coverage figure or readiness hint on the session
+        response teaches the metric instead of the skill, and the client would
+        happily render it.
+        """
+        session = api["components"]["schemas"]["Session"]["properties"]
+        forbidden = {
+            "coverage", "coverage_pct", "topics_covered", "topics_missed",
+            "questions_remaining", "readiness", "completeness", "score",
+            "detected", "bias_flags", "required_topics",
+        }
+        leaked = forbidden & set(session)
+        assert not leaked, f"assessment state exposed mid-consultation: {leaked}"
+
+    def test_feedback_headings_are_the_neutral_ones(self, api):
+        heading = (api["components"]["schemas"]["Feedback"]["properties"]
+                   ["reasoning"]["items"]["properties"]["heading"]["enum"])
+        assert heading == ["Diagnostic focus", "History completeness",
+                           "Evidence exploration"]
+
+    def test_feedback_carries_the_learners_own_evidence(self, api):
+        """ADR-0004: every judgement is traceable to what the learner did."""
+        reasoning = (api["components"]["schemas"]["Feedback"]["properties"]
+                     ["reasoning"]["items"]["properties"])
+        assert "evidence" in reasoning
+
+
+class TestErrorCatalogue:
+    def test_every_documented_error_code_is_declared(self, api):
+        """
+        Codes are a stable API. A client branching on `monthly_limit_reached`
+        breaks if it is absent from the generated enum.
+        """
+        import re
+
+        contract = (SPEC.parent / "docs" / "spec" / "API_CONTRACT.md").read_text(
+            encoding="utf-8")
+        section = contract.split("# 10. Error code catalogue")[1].split("# 11")[0]
+        documented = set(re.findall(r"^\| `(\w+)` \|", section, re.M))
+        declared = set(api["components"]["schemas"]["Error"]["properties"]
+                       ["error"]["properties"]["code"]["enum"])
+        missing = sorted(documented - declared)
+        assert not missing, f"documented but not declared: {missing}"

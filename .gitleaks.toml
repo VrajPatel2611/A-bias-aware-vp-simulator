@@ -16,7 +16,14 @@
 useDefault = true
 
 [allowlist]
-description = "Test fixtures and documentation examples — no real credentials"
+description = "Test fixtures, seeded clinical vocabulary, and documentation examples"
+
+# Compiled bytecode is a copy of source that is already scanned, and it is
+# git-ignored — a hit there is always a duplicate of a real finding.
+paths = [
+  '''__pycache__''',
+  '''\.pyc$''',
+]
 
 regexes = [
   # nidan/infra/telemetry/redaction.py must be tested against strings shaped
@@ -36,4 +43,10 @@ regexes = [
   # API_CONTRACT §2.8 — an Idempotency-Key header example. A UUID, not a
   # credential; gitleaks' generic-api-key rule cannot tell the difference.
   '''8f14e45f-ea4c-4b0e-9d3a-2b1c7f0d5e6a''',
+
+  # A clinical investigation key seeded by migration 017. HbA1c is a
+  # blood glucose test; the generic-api-key rule reads the alphanumeric
+  # run as a token. There are 86 investigation keys and more arrive with
+  # cases 6-10, so expect this list to grow with clinical vocabulary.
+  '''hba1c_glucose''',
 ]

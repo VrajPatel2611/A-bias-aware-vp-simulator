@@ -53,8 +53,17 @@ def test_all_six_enum_types_exist(db):
                      "case_origin", "session_status", "event_type"}
 
 
-def test_the_head_revision_is_016(db):
-    assert db.execute(sa.text("SELECT version_num FROM alembic_version")).scalar() == "016"
+def test_the_head_revision_matches_the_latest_migration_file(db):
+    """
+    Asserted against the filesystem rather than a literal, so adding a
+    migration does not require remembering to update this test. It was written
+    as `== "016"` in T-010 and went stale the moment T-011 added three more.
+    """
+    import pathlib
+    versions = pathlib.Path(__file__).resolve().parents[2] / "migrations" / "versions"
+    latest = max(f.name.split("_")[0] for f in versions.glob("[0-9]*.py"))
+    assert db.execute(sa.text(
+        "SELECT version_num FROM alembic_version")).scalar() == latest
 
 
 @pytest.mark.slow

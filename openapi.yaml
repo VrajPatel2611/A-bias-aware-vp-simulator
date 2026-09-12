@@ -1,0 +1,709 @@
+openapi: 3.1.0
+
+# Nidan v1 API.
+#
+# Written from docs/spec/API_CONTRACT.md, which is the contract; where they
+# disagree, this file is the bug.
+#
+# BUILD_PLAN calls this sync point S-1. Its purpose is to let the frontend
+# track start before the backend exists: generate a typed client from this,
+# mock against it, and build screens while T-030 implements the endpoints.
+# Every operation therefore currently returns 501.
+#
+# CHANGE THIS FILE IN THE SAME COMMIT AS THE CODE (CLAUDE.md conventions).
+# A contract that lags the implementation is worse than no contract, because
+# the client is generated from it and the drift is silent.
+
+info:
+  title: Nidan API
+  version: 1.0.0
+  description: |
+    A bias-aware virtual patient simulator. Trainees interview an LLM-driven
+    patient, order examinations and investigations, submit a diagnosis, and
+    receive feedback on **how they reasoned**.
+
+    Two guarantees shape this API and must not be broken by any change:
+
+    - **No assessment state is exposed during a consultation** (`PRD` P2).
+      There is no endpoint returning coverage, question counts, topic hints or
+      readiness. Contract tests CT-1 and CT-2 assert their absence.
+    - **No bias vocabulary appears in any response** (`PRD` P1). Not "bias",
+      "anchoring", "premature closure" or "confirmation bias". Contract test
+      CT-5 asserts this over rendered output.
+
+servers:
+  - url: https://api.nidan.app/v1
+    description: Production
+  - url: http://localhost:8000/v1
+    description: Local
+
+tags:
+  - name: identity
+  - name: catalogue
+  - name: consultation
+  - name: history
+  - name: billing
+  - name: admin
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ── identity ───────────────────────────────────────────────────────
+  /me:
+    post:
+      tags: [identity]
+      summary: Create or claim a profile
+      description: >
+        Idempotent. Pass `anonymous_id` to claim a trial session taken before
+        signup; the window is 30 days (`PRD` FR-2).
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Profile' }
+        '422': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+    get:
+      tags: [identity]
+      summary: The authenticated user's profile
+      responses:
+        '200': { $ref: '#/components/responses/Profile' }
+        '401': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+    patch:
+      tags: [identity]
+      summary: Update profile fields
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/Profile' }
+        '422': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+    delete:
+      tags: [identity]
+      summary: Delete the account
+      description: >
+        Requires explicit confirmation. Session results and the research
+        pseudonym are retained so published analyses stay reproducible; the
+        deletion screen must say so (`DATA_MODEL` §10.2).
+      responses:
+        '204': { description: Deleted }
+        '422': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /me/export:
+    post:
+      tags: [identity]
+      summary: Request a data export
+      responses:
+        '202': { description: Export queued }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  # ── catalogue ──────────────────────────────────────────────────────
+  /catalog/examinations:
+    get:
+      tags: [catalogue]
+      summary: Every examination a learner may order
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CatalogItem' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /catalog/investigations:
+    get:
+      tags: [catalogue]
+      summary: Every investigation a learner may order
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CatalogItem' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  # ── consultation ───────────────────────────────────────────────────
+  /sessions:
+    post:
+      tags: [consultation]
+      summary: Start a consultation
+      description: >
+        The case is selected by the server (`PRD` FR-3). The learner does not
+        choose, and the response carries no indication of what is being tested.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SessionCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Session' }
+        '403':
+          description: Free allowance exhausted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+    get:
+      tags: [history]
+      summary: Past sessions, newest first
+      parameters:
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionPage' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /trial/sessions:
+    post:
+      tags: [consultation]
+      summary: Start the anonymous trial
+      description: One per browser. Sets an httpOnly `anonymous_id` cookie.
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Session' }
+        '409':
+          description: Trial already used
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [consultation]
+      summary: Resume a consultation
+      description: >
+        Returns the transcript and what has been ordered. **Never** returns
+        coverage, question counts against a target, or readiness (CT-1, CT-2).
+      responses:
+        '200': { $ref: '#/components/responses/Session' }
+        '404': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/questions:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [consultation]
+      summary: Ask the patient a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionCreate' }
+      responses:
+        '201':
+          description: The patient's reply
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PatientReply' }
+        '422':
+          description: Too long, or real patient data detected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: 40-question cap reached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: >
+            Model unavailable. The question is NOT consumed and the typed text
+            is preserved for retry (T-031).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/examinations:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [consultation]
+      summary: Perform an examination
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: cardiovascular }
+      responses:
+        '201':
+          description: The finding
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResult' }
+        '404': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/investigations:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [consultation]
+      summary: Order an investigation
+      description: >
+        Search filters by name only, never ranked by relevance to the case —
+        ranking would leak the answer (`UX_SPEC` S-10).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key: { type: string, example: troponin_0h }
+      responses:
+        '201':
+          description: The result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResult' }
+        '404': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/diagnosis:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - name: Idempotency-Key
+        in: header
+        schema: { type: string, format: uuid }
+        description: Required. A repeat with a different body is a 422.
+    post:
+      tags: [consultation]
+      summary: Submit the diagnosis and end the consultation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiagnosisCreate' }
+      responses:
+        '201':
+          description: Accepted. Feedback generates asynchronously.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id: { type: string, format: uuid }
+                  feedback_ready: { type: boolean }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/feedback:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [consultation]
+      summary: Feedback for a concluded consultation
+      description: >
+        Headings are *Diagnostic focus · History completeness · Evidence
+        exploration*. Bias vocabulary never appears (CT-5).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Feedback' }
+        '404':
+          description: Not ready yet; retry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/feedback/rating:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [consultation]
+      summary: Rate the feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [helpful]
+              properties:
+                helpful: { type: boolean }
+                comment: { type: string, maxLength: 1000 }
+      responses:
+        '204': { description: Recorded }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /sessions/{id}/abandon:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [consultation]
+      summary: Abandon a consultation
+      description: Still counts against the monthly allowance (`PRD` FR-3).
+      responses:
+        '204': { description: Abandoned }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  # ── progress ───────────────────────────────────────────────────────
+  /progress:
+    get:
+      tags: [history]
+      summary: Trends across completed sessions
+      description: Requires at least 3 completed sessions; below that, an empty state.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Progress' }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  # ── billing ────────────────────────────────────────────────────────
+  /billing/checkout:
+    post:
+      tags: [billing]
+      summary: Start Stripe checkout
+      description: Regional pricing is resolved server-side from country (`PRD` D-5).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                interval: { type: string, enum: [month, year] }
+      responses:
+        '200':
+          description: Redirect URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkout_url: { type: string, format: uri }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /billing/portal:
+    post:
+      tags: [billing]
+      summary: Open the Stripe billing portal
+      responses:
+        '200':
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portal_url: { type: string, format: uri }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+  /webhooks/stripe:
+    post:
+      tags: [billing]
+      summary: Stripe webhook receiver
+      description: >
+        Signature-verified on every call — an unverified webhook endpoint is a
+        "make me Pro" button. Idempotent by Stripe event id.
+      security: []
+      responses:
+        '204': { description: Processed }
+        '400': { description: Signature verification failed }
+        '501': { $ref: '#/components/responses/NotImplemented' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase-issued JWT, verified against JWKS (`ADR-0002`).
+
+  responses:
+    NotImplemented:
+      description: >
+        Not implemented. Every operation returns this until T-030; the contract
+        exists first so the frontend can be built against it (sync point S-1).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Profile:
+      description: OK
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Profile' }
+    Session:
+      description: OK
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Session' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: >
+                Stable identifier. Once shipped a code is never renamed or
+                repurposed — clients branch on it.
+              enum:
+                - unauthenticated
+                - token_expired
+                - forbidden
+                - pro_required
+                - monthly_limit_reached
+                - not_found
+                - feedback_not_ready
+                - session_already_active
+                - session_concluded
+                - session_not_concluded
+                - trial_already_used
+                - no_approving_review
+                - validation_failed
+                - question_too_long
+                - diagnosis_empty
+                - diagnosis_too_long
+                - patient_data_detected
+                - keyword_overlap
+                - idempotency_key_reused
+                - confirmation_required
+                - invalid_timezone
+                - trial_expired
+                - unknown_key
+                - question_limit_reached
+                - rate_limited
+                - patient_unavailable
+                - no_cases_available
+                - internal_error
+            message: { type: string }
+            details:
+              type: object
+              additionalProperties: true
+            request_id:
+              type: string
+              description: Quote this to support; it correlates to the server logs.
+
+    Profile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string, nullable: true }
+        professional_role:
+          type: string
+          nullable: true
+          enum: [medical_student, intern, resident, physician, other]
+        year_of_training: { type: integer, minimum: 1, maximum: 10, nullable: true }
+        country: { type: string, minLength: 2, maxLength: 2, nullable: true }
+        timezone: { type: string, example: Asia/Kolkata }
+        subscription_tier: { type: string, enum: [free, pro] }
+        consent_research: { type: boolean }
+        onboarded_at: { type: string, format: date-time, nullable: true }
+        sessions_remaining_this_month:
+          type: integer
+          nullable: true
+          description: >
+            Free tier only. Shown on the dashboard, NEVER during a consultation
+            (`PRD` P2).
+
+    ProfileCreate:
+      type: object
+      properties:
+        anonymous_id:
+          type: string
+          nullable: true
+          description: Claims a trial session taken before signup.
+        timezone: { type: string }
+
+    ProfileUpdate:
+      type: object
+      properties:
+        display_name: { type: string }
+        professional_role:
+          type: string
+          enum: [medical_student, intern, resident, physician, other]
+        year_of_training: { type: integer, minimum: 1, maximum: 10 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        timezone: { type: string }
+        consent_research: { type: boolean }
+
+    CatalogItem:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        group: { type: string }
+        display_order: { type: integer }
+
+    SessionCreate:
+      type: object
+      properties:
+        confidence_pre:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Self-rated confidence before starting (`PRD` FR-3).
+
+    Session:
+      type: object
+      description: >
+        Deliberately carries NO assessment state — no coverage, no question
+        count against a target, no topic hints, no readiness (CT-1, CT-2).
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [active, completed, abandoned, expired] }
+        started_at: { type: string, format: date-time }
+        patient:
+          type: object
+          properties:
+            name: { type: string }
+            age: { type: integer }
+            sex: { type: string }
+            presenting_complaint: { type: string }
+            intro: { type: string }
+            opening_line: { type: string }
+        transcript:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string, enum: [learner, patient] }
+              text: { type: string }
+              at: { type: string, format: date-time }
+        examinations_performed:
+          type: array
+          items: { $ref: '#/components/schemas/OrderResult' }
+        investigations_ordered:
+          type: array
+          items: { $ref: '#/components/schemas/OrderResult' }
+
+    SessionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              case_title: { type: string }
+              started_at: { type: string, format: date-time }
+              status: { type: string }
+              diagnosis_verdict:
+                type: string
+                enum: [correct, partial, anchored, other]
+        next_cursor: { type: string, nullable: true }
+
+    QuestionCreate:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, maxLength: 500 }
+
+    PatientReply:
+      type: object
+      properties:
+        reply: { type: string }
+        questions_asked:
+          type: integer
+          description: >
+            A running count only, never a count against a target. There is no
+            recommended number and none is returned (`PRD` P2).
+
+    OrderResult:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        result: { type: string }
+        at: { type: string, format: date-time }
+
+    DiagnosisCreate:
+      type: object
+      required: [diagnosis]
+      properties:
+        diagnosis: { type: string, maxLength: 200 }
+        confidence_post: { type: integer, minimum: 1, maximum: 5 }
+
+    Feedback:
+      type: object
+      description: >
+        Eight sections in a fixed order (`UX_SPEC` S-12). Headings are
+        *Diagnostic focus · History completeness · Evidence exploration* —
+        never bias vocabulary (CT-5).
+      properties:
+        session_id: { type: string, format: uuid }
+        diagnosis_verdict:
+          type: string
+          enum: [correct, partial, anchored, other]
+        correct_diagnosis: { type: string }
+        reasoning:
+          type: array
+          items:
+            type: object
+            properties:
+              heading:
+                type: string
+                enum: [Diagnostic focus, History completeness, Evidence exploration]
+              observation: { type: string }
+              evidence:
+                type: array
+                items: { type: string }
+                description: >
+                  The learner's own questions, quoted verbatim. Every judgement
+                  is traceable to what they did (`ADR-0004`).
+        narrative:
+          type: array
+          items: { type: string }
+        generator:
+          type: string
+          enum: [model, fallback]
+          description: >
+            `fallback` means the model was unavailable and deterministic
+            feedback was used. It renders identically and without apology.
+
+    Progress:
+      type: object
+      properties:
+        sessions_completed: { type: integer }
+        mean_coverage_last10: { type: number, nullable: true }
+        trends:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              last10: { type: number }
+              prev10: { type: number, nullable: true }
