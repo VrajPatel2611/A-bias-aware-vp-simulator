@@ -10,6 +10,7 @@ import os
 from flask import Flask, g, jsonify, request
 
 from nidan.api.routes import bp as web_bp
+from nidan.api.v1 import bp as v1_bp
 from nidan.config import settings
 from nidan.infra.telemetry import (
     bind,
@@ -62,6 +63,10 @@ def create_app(config: dict | None = None) -> Flask:
     _register_health_endpoints(app)
 
     app.register_blueprint(web_bp)
+    # The JSON API (T-014). Mounted at /v1 to match openapi.yaml's
+    # servers block; the prototype's server-rendered routes keep the
+    # root until T-030 replaces them.
+    app.register_blueprint(v1_bp, url_prefix="/v1")
     return app
 
 

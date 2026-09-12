@@ -62,16 +62,22 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/ProfileCreate' }
       responses:
+        # 201 on creation, 200 when the profile already existed. Both are
+        # success — the guarantee is idempotency, not a fixed status — and the
+        # difference tells a client whether onboarding still needs showing.
         '201': { $ref: '#/components/responses/Profile' }
+        '200': { $ref: '#/components/responses/Profile' }
+        '401': { $ref: '#/components/responses/Error' }
         '422': { $ref: '#/components/responses/Error' }
-        '501': { $ref: '#/components/responses/NotImplemented' }
+        '503': { $ref: '#/components/responses/Error' }
     get:
       tags: [identity]
       summary: The authenticated user's profile
       responses:
         '200': { $ref: '#/components/responses/Profile' }
         '401': { $ref: '#/components/responses/Error' }
-        '501': { $ref: '#/components/responses/NotImplemented' }
+        '404': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
     patch:
       tags: [identity]
       summary: Update profile fields
@@ -483,6 +489,11 @@ components:
               enum:
                 - unauthenticated
                 - token_expired
+                # 503, not 401. Returned when the key server cannot be reached,
+                # so the token CANNOT be checked — which is not the same as a
+                # token that failed a check. A 401 here would send every client
+                # into a refresh loop against an outage (T-014).
+                - service_unavailable
                 - forbidden
                 - pro_required
                 - monthly_limit_reached
