@@ -269,7 +269,7 @@ belongs in the launch checklist (`SECURITY_SPEC` §8), not in someone's memory.
 
 ---
 
-## ⟨D-9⟩ Clinical convention — OPEN, raised by D-7
+## D-9 Clinical convention — ✅ DECIDED (12 September 2026)
 
 **A global launch means one set of cases is read by students trained in
 different conventions, and the existing five are not neutral.**
@@ -297,12 +297,71 @@ is interpreting clinical values, that is not cosmetic friction.**
 | **B · Locale-aware display** | Store SI, render mg/dL for US users. Real feature work, and it must not change what the detectors match on |
 | **C · Dual notation** | `7.8 mmol/L (140 mg/dL)` in the case text. No code, some clutter, works immediately |
 
-**Not decided.** It affects how cases 6–10 are authored, so it should be settled
-before authoring starts rather than after.
+> **DECIDED: option A — Commonwealth convention, unchanged.**
 
-**Separately and regardless of market:** the `oesophageal`/`esophageal` mix is
-an internal inconsistency in existing content and should be made uniform. Not
-changed here — clinical text is not edited without review.
+### Why the cheapest option was also the right one
+
+The concern was overstated on first inspection, and reading the actual content
+corrected it. **Every lab value already carries its own interpretation and
+reference range:**
+
+```
+27.4 mmol/L (CRITICALLY HIGH — normal 4-7)
+4.2 mmol/L (SEVERE ketosis — normal <0.6; DKA requires >3.0)
+Na 133 mmol/L (mildly LOW — hyponatraemia in hypothyroidism…)
+```
+
+A reader who has never seen `mmol/L` still knows 27.4 is critical, because the
+case says so and states the range. **The cases are self-explaining by design**,
+which is why the units are not the barrier they appear to be.
+
+Dual notation on every value would add a second number to keep correct in each
+future case, for a problem the annotations already solve. Locale-aware rendering
+is real feature work for the same modest gain — and the converted text must
+never change what the detectors match on, which makes it riskier than it looks.
+
+### What WAS fixed
+
+Two things had no annotation and no US equivalent, so a reader could not carry
+themselves:
+
+| Was | Now |
+|---|---|
+| `Occasional paracetamol` | `Occasional paracetamol (acetaminophen)` |
+| `PaCO₂ 3.2 kPa (LOW)` | `PaCO₂ 3.2 kPa / 24 mmHg (LOW)` |
+| `PaCO₂ 2.6 kPa (LOW — Kussmaul…)` | `PaCO₂ 2.6 kPa / 20 mmHg (LOW — Kussmaul…)` |
+| `PaO₂ 12.4 kPa · PaCO₂ 5.0 kPa` | `PaO₂ 12.4 kPa / 93 mmHg · PaCO₂ 5.0 kPa / 38 mmHg` |
+
+Blood gases are the one place SI and US notation diverge *without* the case
+annotating the difference. Four edits, in display text only — neither string is
+read by any detector, verified before editing, and the 94% gate is unchanged.
+
+### The rule for cases 6–10
+
+**Write in Commonwealth convention, and annotate every value with its
+interpretation and reference range** — the pattern the existing five already
+follow. Add a US equivalent only where a value has no annotation to carry it,
+as with blood gases.
+
+### Related, and NOT decided here
+
+The annotations sometimes go further than interpretation and state the
+conclusion:
+
+```
+27.4 mmol/L (CRITICALLY HIGH — normal 4-7). → Diagnostic of hyperglycaemia;
+DKA must be excluded
+```
+
+For a product about diagnostic reasoning, *"DKA must be excluded"* does part of
+the thinking for the learner. That is a content-design question adjacent to
+`PRD` P2, not a units question, and it deserves a clinician's judgement before
+five more cases are written in the same style. **Raised, not settled.**
+
+**Still outstanding:** the `oesophageal`/`esophageal` mix (11 and 14
+occurrences) is an internal inconsistency regardless of market. Not changed —
+unlike the four edits above it is not a comprehension barrier, and it touches
+far more text.
 
 ---
 
@@ -880,7 +939,7 @@ If users are learning, this rises. If it does not, our central claim is not work
 | **D-5** | Regional pricing (§9.4) | Yes, at launch | Stripe setup | ✅ **DECIDED** — yes |
 | **D-6** | Funnel targets (§10.2) | As tabled | Analytics setup | ✅ **DECIDED** — accepted, provisional |
 | **D-7** | Launch market | — | Pricing, legal | ✅ **DECIDED** — global English-speaking |
-| ⟨D-9⟩ | **Clinical convention** (§5.5) | *New — raised by D-7* | Case authoring | ⬜ **OPEN** |
+| **D-9** | **Clinical convention** (§5.5) | Commonwealth, annotations carry it | Case authoring | ✅ **DECIDED** — 12 Sep 2026 |
 | **D-8** | Product name / domain | **Nidan** | Everything user-facing | ✅ **DECIDED** — Nidan |
 
 ## D-8 — product name — ✅ DECIDED (9 September 2026)

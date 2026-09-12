@@ -162,11 +162,14 @@ pytest tests/db -q --no-cov        # 37 schema tests, real Postgres in a contain
 | Launch market | **Global English-speaking** — settles Stripe, not the DB region |
 | Product name | **Nidan** |
 
-**Two questions remain open, both raised by the global launch decision:**
+**D-9 clinical convention** — settled 12 Sep 2026: **Commonwealth, unchanged.**
+Every lab value already carries its interpretation and reference range, so the
+units are not a barrier. When authoring cases 6–10, follow that pattern: SI
+units, annotated with meaning and normal range. Add a US equivalent only where
+a value has no annotation to carry it — blood gases are the one such case.
 
-- **⟨D-9⟩ clinical convention** (`PRD` §5.5) — the cases use `mmol/L` and
-  British drug names; US students use `mg/dL` and different names. Settle
-  **before authoring cases 6–10**
+**One question remains open:**
+
 - **Supabase region** (`SECURITY_SPEC` S-4) — one database, one jurisdiction,
   GDPR consequences. Settle before launch
 
