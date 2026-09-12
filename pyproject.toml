@@ -89,7 +89,21 @@ forbidden_modules = ["nidan.infra", "nidan.api", "nidan.app"]
 [[tool.importlinter.contracts]]
 name = "only infra.db may reach the connection pool"
 type = "forbidden"
-source_modules = ["nidan.domain", "nidan.api", "nidan.app", "nidan.infra.llm",
+# nidan.api and nidan.app are deliberately absent, and it is worth saying why.
+#
+# Since T-013 the routes reach the database — through `repo_scope`, which is
+# the point — so `nidan.app -> routes -> repositories -> base -> engine` is a
+# real import path. import-linter counts indirect imports, and cannot express
+# "must not import this DIRECTLY", so listing them here would forbid the
+# architecture rather than the violation.
+#
+# The rule that actually matters — no module outside nidan/infra/db names the
+# engine itself — is checked by tests/test_db_access.py, which reads the source
+# and can tell a direct import from a transitive one. This contract covers the
+# layers that must not reach the database by any path at all.
+#
+# nidan.infra.session_store was deleted in T-013; SESSION_STORE is gone.
+source_modules = ["nidan.domain", "nidan.infra.llm",
                   "nidan.infra.telemetry", "nidan.infra.storage",
-                  "nidan.infra.feedback", "nidan.infra.session_store"]
+                  "nidan.infra.feedback"]
 forbidden_modules = ["nidan.infra.db.engine"]

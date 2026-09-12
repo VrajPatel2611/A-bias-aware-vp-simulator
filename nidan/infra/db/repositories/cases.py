@@ -78,3 +78,38 @@ class CaseRepository(Repository):
             "FROM case_versions WHERE id = :id AND status = 'published'"),
             {"id": case_version_id},
         ).mappings().first()
+
+    def prototype_version_id(self, slug: str) -> UUID | None:
+        """
+        Resolve a case version by slug **regardless of publication status**.
+
+        Transitional, and deliberately awkward to reach.
+
+        The Jinja prototype runs its consultations from
+        `domain/content/cases.py`, but a row in `sessions` needs a real
+        `case_version_id` — and migration 019 seeded all five cases as
+        **drafts**, on purpose: `DATA_MODEL` §9.2 says publishing them without
+        review would make the publication gate a formality. They stay drafts
+        until a clinician approves them (T-023).
+
+        So between T-013 and T-023 there is no published version to point at,
+        and this is the one method allowed to say so. It returns an id and
+        nothing else — no content, no title — so it cannot become a way to read
+        unreviewed clinical material.
+
+        Restricted to a `ServiceActor` so that every caller has to name a
+        reason, and so a learner's scope cannot reach it even by mistake.
+        Delete this when T-023 publishes the cases.
+        """
+        from nidan.infra.db.actor import ServiceActor
+
+        if not isinstance(self._actor, ServiceActor):
+            raise PermissionError(
+                "prototype_version_id resolves unpublished cases and needs a "
+                "ServiceActor with a stated reason")
+
+        return self._conn.execute(sa.text("""
+            SELECT cv.id FROM case_versions cv JOIN cases c ON c.id = cv.case_id
+            WHERE c.slug = :slug AND cv.retired_at IS NULL
+            ORDER BY cv.version DESC LIMIT 1
+        """), {"slug": slug}).scalar()

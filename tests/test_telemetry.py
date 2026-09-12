@@ -179,9 +179,13 @@ class TestNothingSensitiveReaches:
     would catch someone adding `logger.info(f"question: {q}")` while debugging.
     """
 
-    def test_a_learners_question_never_appears_in_the_log(self, monkeypatch, capsys):
+    def test_a_learners_question_never_appears_in_the_log(
+            self, live_db, fake_llm, monkeypatch, capsys):
         from nidan.app import create_app
 
+        # live_db since T-013: the consultation routes replay an event log, so
+        # driving them needs a real database. The property under test is
+        # unchanged — it just cannot be checked against a dictionary any more.
         monkeypatch.setenv("GROQ_API_KEY", "test-key-never-used")
         app = create_app({"TESTING": True})
         client = app.test_client()

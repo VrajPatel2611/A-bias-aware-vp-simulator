@@ -5,6 +5,15 @@ The web layer: parses requests, calls the domain, renders responses. It holds no
 business logic of its own — anything that decides something belongs in
 nidan.domain (ADR-0009).
 
+**Session state lives in PostgreSQL as an append-only event log** (T-013,
+ADR-0003). These handlers hold nothing between requests: each one replays the
+log, acts, appends what happened, and returns. The consequence is that a
+restart loses nothing and the app runs on as many workers as you like — the
+blocker `TECH_SPEC` recorded as B1.
+
+The browser cookie holds three things and no state: a visitor id, the current
+session id, and the current case id. Everything else is derived.
+
 NOTE (BUILD_PLAN T-030): these server-rendered routes are the prototype. They are
 replaced by a JSON API under /v1 once the Next.js client exists (ADR-0006). The
 admin console keeps server rendering.
@@ -24,23 +33,24 @@ from flask import (
 
 from nidan.domain.assessment.bias import detect_all_biases
 from nidan.domain.assessment.clinical import evaluate_clinical
+from nidan.domain.assessment.topics import extract_topics
 from nidan.domain.content.cases import (
+    CASE_SLUGS,
     MASTER_EXAMINATIONS,
     MASTER_INVESTIGATIONS,
     get_all_cases,
     get_case,
 )
+from nidan.domain.feedback_view import build_feedback_view
 from nidan.domain.session import (
-    create_session,
-    get_session_summary,
-    record_exam,
-    record_investigation,
-    update_session,
+    conversation_from,
+    mentions_early_diagnosis,
+    replay,
 )
-from nidan.infra.clock import utc_now_iso
-from nidan.infra.feedback import generate_feedback
+from nidan.infra.db.repositories import ServiceActor, repo_scope
+from nidan.infra.db.repositories.anonymous import anonymous_scope
+from nidan.infra.feedback import generate_feedback_with_source
 from nidan.infra.llm.gateway import call_llm
-from nidan.infra.session_store import SESSION_STORE
 from nidan.infra.storage import save_session_file
 
 bp = Blueprint("web", __name__)
@@ -60,6 +70,105 @@ def _group_by(master: dict) -> dict:
 _GROUPED_INVESTIGATIONS = _group_by(MASTER_INVESTIGATIONS)
 _GROUPED_EXAMINATIONS = _group_by(MASTER_EXAMINATIONS)
 
+
+# ── Session plumbing ──────────────────────────────────────────────────
+
+def _visitor_id() -> str:
+    """
+    A stable id for this browser, in the signed cookie.
+
+    Every consultation in the prototype is an anonymous one: there is no login
+    until T-014. That is not a workaround — `PRD` FR-2 makes the first case a
+    trial anyone can take without an account, and T-015 adds the step that
+    claims it into a real account at signup. So this uses the trial path the
+    repository layer already built and tested (`ADR-0016`), rather than running
+    the whole app with Row-Level Security bypassed for convenience.
+    """
+    visitor = session.get("visitor_id")
+    if not visitor:
+        visitor = str(uuid.uuid4())
+        session["visitor_id"] = visitor
+    return visitor
+
+
+def _scope():
+    """The database, as this visitor. The only way these handlers reach it."""
+    return anonymous_scope(_visitor_id())
+
+
+def _current_session_id() -> uuid.UUID | None:
+    raw = session.get("session_id")
+    if not raw:
+        return None
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        # A tampered or stale cookie. Treated as "no session" rather than a
+        # 500: the learner gets the ordinary "start a case" path.
+        return None
+
+
+def _case_version_id(case_id: str) -> uuid.UUID | None:
+    """
+    The `case_versions` row this consultation belongs to.
+
+    Transitional. The prototype runs its cases from `domain/content/cases.py`,
+    but a `sessions` row needs a real `case_version_id`, and migration 019
+    seeded all five as drafts pending clinical review (T-023). Until they are
+    published there is no published version to point at, so this resolves one
+    through the single method allowed to see unpublished cases — which returns
+    an id and nothing else, and demands a reason for the bypass.
+    """
+    slug = CASE_SLUGS.get(case_id)
+    if slug is None:
+        return None
+    with repo_scope(ServiceActor(
+        "resolving the prototype's case_versions row; the seeded cases are "
+        "drafts pending clinical review (T-023), so no published version exists"
+    )) as db:
+        return db.cases.prototype_version_id(slug)
+
+
+def _start_consultation(case_id: str, *, confidence: int | None = None):
+    """Create the session row and remember it in the cookie. Returns its id."""
+    case_version_id = _case_version_id(case_id)
+    if case_version_id is None:
+        return None
+
+    with _scope() as db:
+        row = db.sessions.create(case_version_id, confidence_pre=confidence)
+
+    session["session_id"] = str(row["id"])
+    session["case_id"] = case_id
+    return row["id"]
+
+
+def _load(db, session_id: uuid.UUID, case_id: str):
+    """
+    Replay a session from its log. Returns (session_state, events) or (None, None).
+
+    The one place state is reconstructed, so every handler sees the same thing
+    and none of them can accidentally work from a partial view.
+    """
+    row = db.sessions.get(session_id)
+    if row is None:
+        return None, None
+    events = db.events.all_for(session_id)
+    state = replay(events, case_id=case_id,
+                   started_at=row["started_at"].isoformat())
+    return state, events
+
+
+def _confidence(raw: str) -> int | None:
+    """The pre-case confidence rating, 1-5, or None if not answered."""
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if 1 <= value <= 5 else None
+
+
+# ── Pages ─────────────────────────────────────────────────────────────
 
 @bp.route("/")
 def index():
@@ -84,25 +193,19 @@ def pre_case_post(case_id):
     if not case:
         return redirect(url_for(".index"))
 
-    # Create server-side session now (so pre_case data is associated with it)
-    session_id = str(uuid.uuid4())
-    session_data = create_session(case_id, started_at=utc_now_iso())
-
-    pre_case_data = {
+    # participant_id and year_of_study are pilot-research fields consumed only
+    # by the session JSON export. They have no column because they are not
+    # product data — the profile owns year_of_training once accounts exist
+    # (T-014). The signed cookie is the right size for them.
+    session["pre_case_data"] = {
         "participant_id": request.form.get("participant_id", "").strip(),
         "year_of_study":  request.form.get("year_of_study", ""),
         "confidence":     request.form.get("confidence", ""),
     }
 
-    SESSION_STORE[session_id] = {
-        "session_data":  session_data,
-        "conversation":  [],
-        "pre_case_data": pre_case_data,
-        "feedback_data": None,
-    }
-
-    session["session_id"] = session_id
-    session["case_id"]    = case_id
+    if _start_consultation(
+            case_id, confidence=_confidence(request.form.get("confidence"))) is None:
+        return redirect(url_for(".index"))
 
     return render_template("chat.html", case=case,
                            grouped_investigations=_GROUPED_INVESTIGATIONS,
@@ -119,37 +222,28 @@ def start_case(case_id):
     if not case:
         return "Case not found.", 404
 
-    session_id = str(uuid.uuid4())
-    session_data = create_session(case_id, started_at=utc_now_iso())
-
-    SESSION_STORE[session_id] = {
-        "session_data":  session_data,
-        "conversation":  [],
-        "pre_case_data": {},
-        "feedback_data": None,
-    }
-
-    session["session_id"] = session_id
-    session["case_id"]    = case_id
+    session["pre_case_data"] = {}
+    if _start_consultation(case_id) is None:
+        return "Case not found.", 404
 
     return render_template("chat.html", case=case,
                            grouped_investigations=_GROUPED_INVESTIGATIONS,
                            grouped_examinations=_GROUPED_EXAMINATIONS)
 
 
+# ── The consultation ──────────────────────────────────────────────────
+
 @bp.route("/chat", methods=["POST"])
 def chat():
     """
     Receives a user question and returns the virtual patient's reply.
-    Updates session tracking on every call.
 
     Body:   {"message": "Does the pain go to your arm?"}
     Returns: {"response": "No, just in my chest.", "question_count": 3}
     """
-    session_id = session.get("session_id")
-    case_id    = session.get("case_id")
-
-    if not session_id or session_id not in SESSION_STORE:
+    session_id = _current_session_id()
+    case_id = session.get("case_id")
+    if session_id is None or not case_id:
         return jsonify({"error": "No active session. Please go back and select a case."}), 400
 
     data = request.get_json(silent=True) or {}
@@ -157,19 +251,22 @@ def chat():
     if not user_message:
         return jsonify({"error": "Empty message."}), 400
 
-    store       = SESSION_STORE[session_id]
-    session_data = store["session_data"]
-    conversation = store["conversation"]
-    case        = get_case(case_id)
+    # Read in one transaction and close it: the model call below takes seconds,
+    # and a pooled connection held across it is a connection nobody else can
+    # use. Nothing is written yet, so there is nothing to hold open for.
+    with _scope() as db:
+        state, events = _load(db, session_id, case_id)
+        if state is None:
+            return jsonify({"error": "No active session."}), 400
+        conversation = conversation_from(events)
 
-    # Build chat history in OpenAI/Groq format.
+    case = get_case(case_id)
+
     # Stored roles are "user"/"model"; the API expects "user"/"assistant".
     messages = [
-        {
-            "role": "user" if msg["role"] == "user" else "assistant",
-            "content": msg["content"],
-        }
-        for msg in conversation
+        {"role": "user" if m["role"] == "user" else "assistant",
+         "content": m["content"]}
+        for m in conversation
     ]
     messages.append({"role": "user", "content": user_message})
 
@@ -180,7 +277,6 @@ def chat():
             max_tokens=200,
             temperature=0.7,
         )
-
     except Exception as e:
         err_str = str(e)
         if "429" in err_str or "rate limit" in err_str.lower():
@@ -190,14 +286,35 @@ def chat():
             msg = "The patient could not respond right now. Please try again."
         return jsonify({"error": msg}), 500
 
-    # Update tracking and history
-    update_session(session_data, user_message)
-    conversation.append({"role": "user",  "content": user_message})
-    conversation.append({"role": "model", "content": patient_reply})
+    # The question and the reply are appended together, in one transaction.
+    #
+    # Appending the question first would be the more orthodox event sourcing,
+    # but a failed model call would then leave a question with no answer: the
+    # learner sees an error, retypes, and the log holds the question twice.
+    # question_count feeds premature closure (P1: q < q_min), so an inflated
+    # count suppresses a flag the learner should have seen. Losing a question
+    # nobody got an answer to is the cheaper mistake.
+    with _scope() as db:
+        db.events.append(session_id, "question", {
+            "text": user_message,
+            "char_count": len(user_message),
+        })
+        db.events.append(session_id, "patient_reply", {
+            "text": patient_reply,
+            # What the system understood, at the time — DATA_MODEL §8.2. T-016
+            # compares a recomputation against this to detect drift, so it is
+            # recorded here rather than re-derived during replay.
+            "matched_topics": extract_topics(user_message),
+        })
+        if state["early_diagnosis"] is None and mentions_early_diagnosis(user_message):
+            db.events.append(session_id, "early_diagnosis", {"text": user_message})
+
+        db.sessions.touch(session_id)
+        state, _ = _load(db, session_id, case_id)
 
     return jsonify({
-        "response":       patient_reply,
-        "question_count": session_data["question_count"],
+        "response": patient_reply,
+        "question_count": state["question_count"],
     })
 
 
@@ -214,31 +331,37 @@ def examine():
     Body:   {"system": "vitals"}
     Returns: {"label": "Vital Signs", "finding": "HR 76 ..."}
     """
-    session_id = session.get("session_id")
-    case_id    = session.get("case_id")
-    if not session_id or session_id not in SESSION_STORE:
+    session_id = _current_session_id()
+    case_id = session.get("case_id")
+    if session_id is None or not case_id:
         return jsonify({"error": "No active session."}), 400
 
-    data       = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or {}
     system_key = data.get("system", "")
 
     # Validate against the master list (not the case-specific list)
     if system_key not in MASTER_EXAMINATIONS:
         return jsonify({"error": "Unknown examination."}), 400
 
-    case      = get_case(case_id)
+    case = get_case(case_id)
     case_exam = case.get("examination", {})
 
     # Case-specific finding if relevant; normal finding otherwise
-    if system_key in case_exam:
-        finding = case_exam[system_key]["finding"]
-    else:
-        finding = MASTER_EXAMINATIONS[system_key]["normal_result"]
+    was_case_specific = system_key in case_exam
+    finding = (case_exam[system_key]["finding"] if was_case_specific
+               else MASTER_EXAMINATIONS[system_key]["normal_result"])
 
     # Always use the master label for consistency across cases
     label = MASTER_EXAMINATIONS[system_key]["label"]
 
-    record_exam(SESSION_STORE[session_id]["session_data"], system_key)
+    with _scope() as db:
+        if db.sessions.get(session_id) is None:
+            return jsonify({"error": "No active session."}), 400
+        db.events.append(session_id, "examination", {
+            "key": system_key, "label": label, "finding": finding,
+            "was_case_specific": was_case_specific,
+        })
+        db.sessions.touch(session_id)
 
     return jsonify({"label": label, "finding": finding})
 
@@ -256,31 +379,37 @@ def investigate():
     Body:   {"test": "ecg"}
     Returns: {"label": "ECG (12-lead)", "result": "Normal sinus rhythm ..."}
     """
-    session_id = session.get("session_id")
-    case_id    = session.get("case_id")
-    if not session_id or session_id not in SESSION_STORE:
+    session_id = _current_session_id()
+    case_id = session.get("case_id")
+    if session_id is None or not case_id:
         return jsonify({"error": "No active session."}), 400
 
-    data     = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or {}
     test_key = data.get("test", "")
 
     # Validate against master list (not the case-specific list)
     if test_key not in MASTER_INVESTIGATIONS:
         return jsonify({"error": "Unknown investigation."}), 400
 
-    case     = get_case(case_id)
+    case = get_case(case_id)
     case_inv = case.get("investigations", {})
 
     # Case-specific result if relevant; normal result otherwise
-    if test_key in case_inv:
-        result = case_inv[test_key]["result"]
-    else:
-        result = MASTER_INVESTIGATIONS[test_key]["normal_result"]
+    was_case_specific = test_key in case_inv
+    result = (case_inv[test_key]["result"] if was_case_specific
+              else MASTER_INVESTIGATIONS[test_key]["normal_result"])
 
     # Always use the master label for consistency across cases
     label = MASTER_INVESTIGATIONS[test_key]["label"]
 
-    record_investigation(SESSION_STORE[session_id]["session_data"], test_key)
+    with _scope() as db:
+        if db.sessions.get(session_id) is None:
+            return jsonify({"error": "No active session."}), 400
+        db.events.append(session_id, "investigation", {
+            "key": test_key, "label": label, "result": result,
+            "was_case_specific": was_case_specific,
+        })
+        db.sessions.touch(session_id)
 
     return jsonify({"label": label, "result": result})
 
@@ -289,132 +418,54 @@ def investigate():
 def conclude():
     """
     Receives the student's final diagnosis.
-    Runs bias detection, generates Socratic feedback, saves session JSON,
-    stores feedback_data in SESSION_STORE for the /feedback page.
+
+    Appends the diagnosis event, closes the session, runs the deterministic
+    assessment, and stores the generated prose. It stores no scores: the
+    feedback screen recomputes every one of them from the log (ADR-0003).
 
     Body:    {"diagnosis": "Myocardial infarction"}
     Returns: 200 OK (body ignored — JS redirects to /feedback)
     """
-    session_id = session.get("session_id")
-    case_id    = session.get("case_id")
-
-    if not session_id or session_id not in SESSION_STORE:
+    session_id = _current_session_id()
+    case_id = session.get("case_id")
+    if session_id is None or not case_id:
         return jsonify({"error": "No active session."}), 400
 
-    data      = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or {}
     diagnosis = data.get("diagnosis", "").strip()
     if not diagnosis:
         return jsonify({"error": "No diagnosis provided."}), 400
 
-    store        = SESSION_STORE[session_id]
-    session_data = store["session_data"]
-    case         = get_case(case_id)
+    case = get_case(case_id)
 
-    # Record diagnosis and end time
-    session_data["diagnosis_submitted"] = diagnosis
-    session_data["end_time"] = utc_now_iso()
+    with _scope() as db:
+        if db.sessions.get(session_id) is None:
+            return jsonify({"error": "No active session."}), 400
+        # complete() returns False if a diagnosis was already recorded, which
+        # makes a double-submit idempotent at the database rather than in a
+        # check the second request could race past.
+        first_submission = db.sessions.complete(session_id)
+        if first_submission:
+            db.events.append(session_id, "diagnosis", {"text": diagnosis})
+        state, _ = _load(db, session_id, case_id)
 
-    # Run bias detection (cognitive reasoning)
-    bias_results = detect_all_biases(session_data, case)
+    if not first_submission:
+        return jsonify({"status": "ok"})
 
-    # Run clinical evaluation (diagnosis, exams, investigations)
-    clinical_eval = evaluate_clinical(session_data, case)
+    bias_results = detect_all_biases(state, case)
+    clinical_eval = evaluate_clinical(state, case)
+    feedback = generate_feedback_with_source(
+        bias_results, clinical_eval, state, case)
 
-    # Generate feedback (diagnosis-aware, combines both)
-    feedback_messages = generate_feedback(
-        bias_results, clinical_eval, session_data, case
-    )
+    with _scope() as db:
+        db.feedback.save(session_id, feedback.lines, generator=feedback.generator)
 
-    # Build session summary
-    summary = get_session_summary(session_data, case)
-
-    # Topics hit/missed for the feedback template coverage grid
-    required    = case["required_topics"]
-    covered     = session_data["topics_covered"]
-    topics_hit  = [t for t in required if t in covered]
-    topics_missed = [t for t in required if t not in covered]
-
-    # ── Examination Scorecard ─────────────────────────────────────────
-    # Categorise every examination the student performed and every key
-    # exam they should have done.
-    all_exams = session_data.get("exams_performed", [])
-    case_exam = case.get("examination", {})
-
-    exam_scorecard = {
-        "key_done":      [],   # essential exam performed ✓
-        "key_missed":    [],   # essential exam skipped ○
-        "relevant_done": [],   # in case dict but not key (fine to do)
-        "extra_done":    [],   # from master, not in case dict (not needed)
-    }
-    for k in all_exams:
-        lbl = (MASTER_EXAMINATIONS[k]["label"] if k in MASTER_EXAMINATIONS
-               else case_exam.get(k, {}).get("label", k))
-        if k in case_exam:
-            if case_exam[k].get("key"):
-                exam_scorecard["key_done"].append(lbl)
-            else:
-                exam_scorecard["relevant_done"].append(lbl)
-        else:
-            exam_scorecard["extra_done"].append(lbl)
-    for k, v in case_exam.items():
-        if v.get("key") and k not in all_exams:
-            lbl = (MASTER_EXAMINATIONS[k]["label"] if k in MASTER_EXAMINATIONS
-                   else v.get("label", k))
-            exam_scorecard["key_missed"].append(lbl)
-
-    # ── Investigation Scorecard ───────────────────────────────────────
-    # Categorise every test ordered and every key test not ordered.
-    all_inv  = session_data.get("investigations_ordered", [])
-    case_inv = case.get("investigations", {})
-
-    inv_scorecard = {
-        "key_done":        [],   # key test ordered ✓
-        "key_missed":      [],   # key test not ordered ○
-        "reasonable_done": [],   # reasonable test ordered (appropriate)
-        "low_value_done":  [],   # low-value test ordered (flagged ⚠)
-        "extra_done":      [],   # from master, not in case dict (neutral)
-    }
-    for k in all_inv:
-        lbl = (MASTER_INVESTIGATIONS[k]["label"] if k in MASTER_INVESTIGATIONS
-               else case_inv.get(k, {}).get("label", k))
-        if k in case_inv:
-            cat = case_inv[k].get("category", "")
-            if cat == "key":
-                inv_scorecard["key_done"].append(lbl)
-            elif cat == "reasonable":
-                inv_scorecard["reasonable_done"].append(lbl)
-            elif cat == "low_value":
-                inv_scorecard["low_value_done"].append(lbl)
-        else:
-            inv_scorecard["extra_done"].append(lbl)
-    for k, v in case_inv.items():
-        if v.get("category") == "key" and k not in all_inv:
-            lbl = (MASTER_INVESTIGATIONS[k]["label"] if k in MASTER_INVESTIGATIONS
-                   else v.get("label", k))
-            inv_scorecard["key_missed"].append(lbl)
-
-    # Package everything the /feedback template needs
-    feedback_data = {
-        "case_id":           case_id,
-        "case_title":        case["title"],
-        "diagnosis_given":   diagnosis,
-        "questions_asked":   session_data["question_count"],
-        "biases_detected":   bias_results,
-        "clinical_eval":     clinical_eval,
-        "feedback_messages": feedback_messages,
-        "session_summary":   summary,
-        "topics_hit":        topics_hit,
-        "topics_missed":     topics_missed,
-        "exam_scorecard":    exam_scorecard,
-        "inv_scorecard":     inv_scorecard,
-    }
-    store["feedback_data"] = feedback_data
-
-    # Save research data JSON
+    # The research JSON export, unchanged. It is the pilot's artefact and the
+    # input to analyze_sessions.py; the event log does not replace it yet.
     save_session_file(
-        session_id, case_id, case, session_data,
-        store.get("pre_case_data", {}),
-        bias_results, clinical_eval, feedback_messages
+        str(session_id), case_id, case, state,
+        session.get("pre_case_data", {}),
+        bias_results, clinical_eval, feedback.lines,
     )
 
     return jsonify({"status": "ok"})
@@ -423,18 +474,35 @@ def conclude():
 @bp.route("/feedback")
 def feedback():
     """
-    Renders the dedicated feedback page from stored session data.
+    Renders the feedback page.
+
+    Every number on it is recomputed here from the event log. Only the prose is
+    read from storage, because only the prose cannot be recomputed — a model
+    wrote it (ADR-0005).
     """
-    session_id = session.get("session_id")
-    if not session_id or session_id not in SESSION_STORE:
+    session_id = _current_session_id()
+    case_id = session.get("case_id")
+    if session_id is None or not case_id:
         return redirect(url_for(".index"))
 
-    store = SESSION_STORE[session_id]
-    feedback_data = store.get("feedback_data")
-    if not feedback_data:
+    case = get_case(case_id)
+    if not case:
         return redirect(url_for(".index"))
 
-    return render_template("feedback.html", data=feedback_data)
+    with _scope() as db:
+        state, _ = _load(db, session_id, case_id)
+        if state is None or state["diagnosis_submitted"] is None:
+            return redirect(url_for(".index"))
+        stored = db.feedback.latest(session_id)
+        db.events.append(session_id, "feedback_viewed", {})
+
+    view = build_feedback_view(
+        state, case, case_id=case_id,
+        bias_results=detect_all_biases(state, case),
+        clinical_eval=evaluate_clinical(state, case),
+        feedback_lines=stored["lines"] if stored else [],
+    )
+    return render_template("feedback.html", data=view)
 
 
 @bp.route("/save_session", methods=["POST"])

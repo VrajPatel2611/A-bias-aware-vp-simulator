@@ -26,7 +26,9 @@ A-bias-aware-vp-simulator/
 │   │   │   ├── bias.py ★         the three detectors — the core IP
 │   │   │   ├── clinical.py       diagnosis verdicts, workup coverage
 │   │   │   └── topics.py         TOPIC_KEYWORDS, extract_topics()
-│   │   ├── session.py            session state transitions
+│   │   ├── events.py             the 8 event types and payload shapes
+│   │   ├── feedback_view.py      the feedback screen, recomputed
+│   │   ├── session.py            session state + replay(events) ★
 │   │   ├── feedback.py           feedback prompt building (no marking)
 │   │   └── types.py              shared type aliases
 │   ├── infra/              everything touching the outside world
@@ -39,29 +41,33 @@ A-bias-aware-vp-simulator/
 │   │   │       ├── base.py ★         repo_scope() — SET LOCAL ROLE, auth.uid()
 │   │   │       ├── profiles.py       the actor's own profile
 │   │   │       ├── sessions.py       consultations, scoped by RLS
+│   │   │       ├── events.py ★       the append-only log, with the retry
+│   │   │       ├── feedback.py       stored prose (nothing else is stored)
 │   │   │       ├── cases.py          published content, read-only
 │   │   │       └── anonymous.py ⚠    the one path with RLS OFF
 │   │   ├── telemetry/            JSON logs, redaction, Sentry
-│   │   ├── storage.py            session JSON read/write
+│   │   ├── storage.py            the research JSON export
 │   │   ├── clock.py              the injected clock
-│   │   ├── session_store.py      ⚠ in-memory, replaced by T-013
 │   │   └── feedback.py           calls the gateway
 │   ├── api/routes.py       Flask blueprint — 9 routes
 │   ├── web/                templates and static files
 │   ├── config.py           typed settings, validated at boot
 │   └── app.py              create_app() · __main__.py runs it
 │
-├── tests/ ★                396 tests
+├── tests/ ★                430 tests
 │   ├── conftest.py               fixtures + the no-network guard
 │   ├── fakes/llm.py              the fake model
 │   ├── domain/                   unit + property tests
 │   ├── db/                       real Postgres in a container
+│   │   ├── test_routes.py ★        a consultation, end to end
+│   │   ├── test_event_concurrency.py ★ 10 parallel appends → seq 1..10
 │   │   ├── test_constraints.py     CHECK constraints and indexes
 │   │   ├── test_triggers.py        append-only, publication gate
 │   │   ├── test_rls.py             the policies are written correctly
 │   │   ├── test_seed.py            migrations 017-019 seeded the content
 │   │   ├── test_repository_scope.py ★ the policies deny the APPLICATION
 │   │   └── test_anonymous_scope.py ★ the path where RLS cannot help
+│   ├── domain/test_replay.py ★   derived state is reproducible
 │   ├── test_case_invariants.py   C-1 … C-9 on the case content
 │   ├── test_llm_never_marks.py ★ proves property P1
 │   ├── test_layering.py          proves domain/ stays pure

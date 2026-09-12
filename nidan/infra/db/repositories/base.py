@@ -122,6 +122,8 @@ class Repositories:
 
     def __init__(self, conn: Connection, actor: Actor) -> None:
         from nidan.infra.db.repositories.cases import CaseRepository
+        from nidan.infra.db.repositories.events import EventRepository
+        from nidan.infra.db.repositories.feedback import FeedbackRepository
         from nidan.infra.db.repositories.profiles import ProfileRepository
         from nidan.infra.db.repositories.sessions import SessionRepository
 
@@ -129,6 +131,8 @@ class Repositories:
         self.actor = actor
         self.profiles = ProfileRepository(conn, actor)
         self.sessions = SessionRepository(conn, actor)
+        self.events = EventRepository(conn, actor)
+        self.feedback = FeedbackRepository(conn, actor)
         self.cases = CaseRepository(conn, actor)
 
 

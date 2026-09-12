@@ -94,3 +94,26 @@ class SessionRepository(Repository):
         self._conn.execute(sa.text(
             "UPDATE sessions SET last_activity_at = now() WHERE id = :id"),
             {"id": session_id})
+
+    def complete(self, session_id: UUID) -> bool:
+        """
+        Close a session after a diagnosis. Returns whether this call closed it.
+
+        `WHERE ... AND diagnosis_submitted_at IS NULL` makes submission
+        idempotent at the database rather than in a request handler: a
+        double-clicked submit, or a retry after a timeout, updates no row the
+        second time and gets False. `API_CONTRACT` requires that (FR-7.6), and
+        a check-then-write in Python would not survive two concurrent requests.
+
+        `ended_when_terminal` (migration 009) requires `ended_at` whenever the
+        status is not active, so both are set together or neither is.
+        """
+        result = self._conn.execute(sa.text("""
+            UPDATE sessions
+               SET status = 'completed',
+                   ended_at = now(),
+                   diagnosis_submitted_at = now(),
+                   last_activity_at = now()
+             WHERE id = :id AND diagnosis_submitted_at IS NULL
+        """), {"id": session_id})
+        return result.rowcount == 1

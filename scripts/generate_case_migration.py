@@ -24,7 +24,13 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from nidan.domain.content.cases import CASES, get_case  # noqa: E402
+from nidan.domain.content.cases import (  # noqa: E402
+    CASE_SLUGS as SLUG,
+)
+from nidan.domain.content.cases import (
+    CASES,
+    get_case,
+)
 
 OUT = pathlib.Path(__file__).resolve().parent.parent / "migrations" / "versions" / "019_seed_cases.py"
 
@@ -50,15 +56,9 @@ PATIENT = {
                "presenting_complaint": "Vomiting and severe thirst"},
 }
 
-# Stable, human-readable slugs. `cases.slug` is UNIQUE and is what a URL and the
-# admin console will use, so "case_1" would be a poor permanent identifier.
-SLUG = {
-    "case_1": "chest-pain-gerd",
-    "case_2": "breathlessness-pulmonary-embolism",
-    "case_3": "confusion-delirium-uti",
-    "case_4": "fatigue-hypothyroidism",
-    "case_5": "vomiting-diabetic-ketoacidosis",
-}
+# The slugs live in domain/content/cases.py as CASE_SLUGS, imported above as
+# SLUG. They moved there in T-013, which needs them at runtime; keeping a second
+# copy here would have been two sources free to drift without either failing.
 
 
 def to_content(case: dict, case_id: str) -> dict:

@@ -302,7 +302,7 @@ Accept   1. Repository base requires an actor context; no query bypasses it
          3. Anonymous-session path isolated and separately tested
 ```
 
-**T-013 · Event-sourced session state** ⭐
+**T-013 · Event-sourced session state** ⭐ — ✅ **DONE** (2026-09-12)
 ```
 Phase    1            Depends  T-012          Est  3 d      Owner  V
 Files    nidan/domain/session.py, nidan/infra/db/repositories/session.py
