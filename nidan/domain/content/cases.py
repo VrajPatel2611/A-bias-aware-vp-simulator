@@ -594,7 +594,8 @@ CLINICAL_DATA = {
             "blood pressure, no previous cardiac disease.\n"
             "• Medications: ibuprofen 400mg EVERY day (sometimes 800mg) for back "
             "pain — has taken it daily for over a year without any stomach "
-            "protection. Occasional paracetamol. NO statins, NO antihypertensives, "
+            "protection. Occasional paracetamol (acetaminophen). NO statins, "
+              "NO antihypertensives, "
             "NO antacids regularly.\n"
             "• Social: smokes 10 cigarettes/day for 20 years. 2-3 coffees daily. "
             "Alcohol 15-18 units/week (mostly at work events). Sedentary desk job, "
@@ -789,7 +790,8 @@ CLINICAL_DATA = {
                           "Right axis deviation. Classic PE changes.",
                 "category": "key"},
             "abg": {"label": "Arterial Blood Gas (ABG) on air",
-                "result": "pH 7.46 · PaCO₂ 3.2 kPa (LOW) · PaO₂ 7.8 kPa (LOW) "
+                "result": "pH 7.46 · PaCO₂ 3.2 kPa / 24 mmHg (LOW) · "
+                            "PaO₂ 7.8 kPa / 59 mmHg (LOW) "
                           "· HCO₃ 22 · SaO₂ 91%. Type 1 respiratory failure "
                           "with respiratory alkalosis — V/Q mismatch from PE.",
                 "category": "key"},
@@ -1226,7 +1228,7 @@ CLINICAL_DATA = {
                 "category": "key"},
             "abg": {"label": "Arterial Blood Gas (ABG)",
                 "result": "pH 7.18 (ACIDOSIS — normal 7.35-7.45) · "
-                          "PaCO₂ 2.6 kPa (LOW — Kussmaul compensation) · "
+                          "PaCO₂ 2.6 kPa / 20 mmHg (LOW — Kussmaul compensation) · "
                           "HCO₃ 9 mmol/L (VERY LOW) · BE -18 · PaO₂ 13.8. "
                           "→ SEVERE METABOLIC ACIDOSIS with respiratory "
                           "compensation. Confirms DKA diagnosis.",
@@ -1594,7 +1596,7 @@ MASTER_INVESTIGATIONS = {
         "label": "Arterial Blood Gas (ABG) on air",
         "group": "Respiratory",
         "normal_result": (
-            "pH 7.41 · PaO₂ 12.4 kPa · PaCO₂ 5.0 kPa · "
+            "pH 7.41 · PaO₂ 12.4 kPa / 93 mmHg · PaCO₂ 5.0 kPa / 38 mmHg · "
             "HCO₃ 24 mmol/L · SaO₂ 98% · BE 0. "
             "Normal acid-base balance. No respiratory failure."
         ),
