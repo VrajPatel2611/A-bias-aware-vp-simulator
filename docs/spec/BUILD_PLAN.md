@@ -276,7 +276,7 @@ Done     16 migrations (001-016), 21 tables, 6 enums, 11 triggers, 5 RLS policie
          tables; DATA_MODEL §4-7 defines 21.
 ```
 
-**T-011 · Seed content and `openapi.yaml` skeleton** ⭐ *(sync point S-1)*
+**T-011 · Seed content and `openapi.yaml` skeleton** ⭐ *(sync point S-1)* — ✅ **DONE** (2026-09-12)
 ```
 Phase    1            Depends  T-010          Est  2 d      Owner  V
 Files    migrations/017,018, openapi.yaml
@@ -286,6 +286,10 @@ Accept   1. 27 examinations, 86 investigations, 40 topics, 523 phrases seeded fr
          3. 5 existing cases migrated as case_versions v1, status='draft'
          4. openapi.yaml committed with all v1 paths and schemas (may return 501)
 Note     Unblocks the frontend track. Do not let this slip.
+Done     Migrations 017 (27/86/40/523 seeded), 018 (engine 1.0.0), 019 (5 cases
+         as v1 DRAFT). openapi.yaml: 18 paths, 22 operations, 28 error codes.
+         Found and fixed a T-010 test-fixture bug that truncated the newly
+         seeded cases. Yogesh can now generate a client and start T-032.
 ```
 
 **T-012 · Repository layer and tenant scoping**

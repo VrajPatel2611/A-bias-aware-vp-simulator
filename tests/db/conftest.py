@@ -60,19 +60,47 @@ def pg_url() -> str:
     container.stop()
 
 
-# Tables holding test rows, in an order safe to truncate. Master content
-# (examinations, topic_lexicon) is seeded by T-011 and deliberately absent.
+@pytest.fixture(scope="session")
+def seeded_case_slugs(pg_url) -> list:
+    """
+    The slugs of the cases created by migration 019.
+
+    SLUGS, not ids. Ids are generated fresh every time the migration runs, and
+    `test_downgrade_to_base_then_upgrade_again` rebuilds the whole schema
+    mid-session — after which a session-scoped list of ids refers to rows that
+    no longer exist, and the teardown deletes all five seeded cases as
+    "not seeded". Slugs are deterministic, so they survive the rebuild.
+
+    Captured rather than hard-coded so it keeps working when cases 6-10 are
+    authored.
+    """
+    engine = sa.create_engine(pg_url)
+    with engine.connect() as conn:
+        slugs = list(conn.execute(sa.text("SELECT slug FROM cases")).scalars())
+    engine.dispose()
+    return slugs
+
+
+# Tables holding only test rows, safe to truncate wholesale.
+#
+# `cases` and `case_versions` are NOT here, and that is the point. They were,
+# until T-011 seeded the five clinical cases into them — at which point the
+# truncate silently destroyed real content and every seed assertion failed in
+# whichever test file happened to run next. The bug was mine, introduced in
+# T-010 by a list that was correct when those tables held nothing but fixtures.
+#
+# Master content (examinations, investigations, topic_lexicon, topic_phrases,
+# engine_versions) was never here for the same reason.
 _DATA_TABLES = (
     "session_events", "session_results", "feedback_texts", "sessions",
-    "clinical_reviews", "case_versions", "cases",
+    "clinical_reviews",
     "subscriptions", "user_case_history", "user_progress",
     "llm_calls", "leakage_flags", "idempotency_keys", "audit_log",
-    "profiles",
 )
 
 
 @pytest.fixture
-def db(pg_url):
+def db(pg_url, seeded_case_slugs):
     """
     A connection whose work is undone afterwards.
 
@@ -98,7 +126,23 @@ def db(pg_url):
         txn.rollback()
     else:
         with conn.begin():
-            conn.exec_driver_sql("TRUNCATE " + ", ".join(_DATA_TABLES) + " CASCADE")
+            # TRUNCATE, not DELETE, because session_events and audit_log carry
+            # append-only triggers that refuse a DELETE by design. TRUNCATE
+            # bypasses row triggers, which is exactly what a test teardown wants
+            # and exactly what application code must never be able to do.
+            #
+            # Deliberately WITHOUT CASCADE. Cascade propagates outward to every
+            # table holding a foreign key INTO these — and `cases.created_by`
+            # references `profiles`, so `TRUNCATE profiles CASCADE` silently
+            # took the five seeded cases with it. Listing the tables explicitly
+            # means an FK we have forgotten fails loudly instead.
+            conn.exec_driver_sql("TRUNCATE " + ", ".join(_DATA_TABLES))
+
+            # Cases a test created, never the seeded five.
+            conn.exec_driver_sql(
+                "DELETE FROM cases WHERE slug <> ALL(%s)", (seeded_case_slugs,))
+            # After the cases, because cases.created_by references profiles.
+            conn.exec_driver_sql("DELETE FROM profiles")
             conn.exec_driver_sql("DELETE FROM auth.users")
     conn.close()
     engine.dispose()
