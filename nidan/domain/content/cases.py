@@ -2406,6 +2406,24 @@ MASTER_EXAMINATIONS = {
 }
 
 
+# Stable, human-readable identifiers. `cases.slug` is UNIQUE in the database and
+# is what a URL and the admin console use, so "case_1" would be a poor permanent
+# identifier (DATA_MODEL §5.1).
+#
+# This map lived in scripts/generate_case_migration.py until T-013 needed it at
+# runtime, to resolve a consultation to the `case_versions` row it belongs to.
+# Copying it would have been two sources that drift silently; the generator now
+# imports it from here, and tests/db/test_seed.py asserts these are exactly the
+# slugs migration 019 seeded.
+CASE_SLUGS: dict[str, str] = {
+    "case_1": "chest-pain-gerd",
+    "case_2": "breathlessness-pulmonary-embolism",
+    "case_3": "confusion-delirium-uti",
+    "case_4": "fatigue-hypothyroidism",
+    "case_5": "vomiting-diabetic-ketoacidosis",
+}
+
+
 def get_case(case_id: str) -> Case | None:
     """
     Returns a single case config dict by ID.

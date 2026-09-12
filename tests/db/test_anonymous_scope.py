@@ -98,8 +98,11 @@ def test_the_trial_scope_reaches_nothing_but_sessions_and_cases(app_db):
         assert not hasattr(db, "profiles")
         assert not hasattr(db, "results")
         assert not hasattr(db, "subscriptions")
+        # An allow-list, not a snapshot. It failed when T-013 added `events`,
+        # which is the point: anything new a trial visitor can reach should be
+        # a decision someone made, not something that arrived with a refactor.
         assert sorted(k for k in vars(db) if not k.startswith("_")) == [
-            "actor", "cases", "conn", "sessions"]
+            "actor", "cases", "conn", "events", "feedback", "sessions"]
 
 
 def test_a_visitor_cannot_open_the_general_repositories(app_db):

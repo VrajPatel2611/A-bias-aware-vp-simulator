@@ -37,13 +37,25 @@ def create_app(config: dict | None = None) -> Flask:
         static_folder="web/static",
     )
 
-    # A fixed key keeps sessions valid across restarts; the random fallback
-    # means a missing key never blocks local development. Validation of the key
-    # itself happens once, at import, in nidan.config.
+    # A fixed key keeps sessions valid across restarts and, since T-013, across
+    # WORKERS: gunicorn imports this module separately in each worker, so an
+    # unset key means every worker signs cookies with a different random secret
+    # and rejects the others' sessions. At --workers 1 that was merely
+    # inconvenient; at 2 it is a broken application, which is why config.py now
+    # refuses to start in production without one.
+    #
+    # The random fallback stays, so a missing key never blocks local
+    # development or a test. Validation of the key itself happens once, at
+    # import, in nidan.config.
     app.secret_key = settings.FLASK_SECRET_KEY or os.urandom(24)
 
     if config:
         app.config.update(config)
+        # After the update, so a caller can pin the key explicitly — which is
+        # what a test needs when it builds two applications that must read each
+        # other's cookies.
+        if "SECRET_KEY" in config:
+            app.secret_key = config["SECRET_KEY"]
 
     setup_telemetry()
     _register_request_logging(app)

@@ -146,3 +146,34 @@ class TestPublishedContentIsWorldReadable:
         rls_conn.execute(sa.text("SET request.jwt.claim.sub = ''"))
         seen = rls_conn.execute(sa.text("SELECT id FROM case_versions")).scalars().all()
         assert draft not in seen, "an unpublished case was readable"
+
+
+def test_every_rls_enabled_table_has_at_least_one_policy(db):
+    """
+    The guard for the defect migration 021 fixed.
+
+    RLS enabled with zero policies does not mean "unrestricted" — it means
+    **deny everything** to any role that is not the owner or a superuser. So
+    the failure is silent in exactly the wrong direction: the table looks
+    protected, `pg_class.relrowsecurity` is true, and every query from the
+    application returns nothing at all, for reasons no error message gives.
+
+    `DATA_MODEL` §10.1 enabled RLS on eight tables and wrote policies for four.
+    Four tables were unreachable for three tasks before anything touched them.
+    A table added later with the same omission would be just as quiet, so this
+    is checked as a property of the schema rather than table by table.
+    """
+    unprotected = db.execute(sa.text("""
+        SELECT c.relname
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+        LEFT JOIN pg_policy p ON p.polrelid = c.oid
+        WHERE c.relkind = 'r' AND c.relrowsecurity
+        GROUP BY c.relname
+        HAVING count(p.polname) = 0
+        ORDER BY c.relname
+    """)).scalars().all()
+
+    assert not unprotected, (
+        "RLS is enabled with no policy on: " + ", ".join(unprotected) +
+        " — these tables deny every query from the application, silently")

@@ -96,7 +96,7 @@ Coverage percentage is not a target and is not measured.
 
 ## 4 · Smoke tests — `tests/test_smoke.py`
 
-**11 tests · ~0.15 s · run on every change**
+**11 tests · ~0.3 s · run on every change**
 
 ### What they are for
 
@@ -104,6 +104,16 @@ After T-001 moved every file in the codebase, the first question is not "is the
 logic correct" — the logic was not touched. It is **"is anything still
 connected?"** A smoke test answers that and nothing more. The name comes from
 hardware: power it on and see whether smoke comes out.
+
+**T-013 moved half of them out.** Session state became an append-only event
+log, so the consultation routes now replay that log on every request and cannot
+run without PostgreSQL. Those tests moved to `tests/db/test_routes.py`, where
+they became stronger — they now check that a consultation survives the process
+that started it. Keeping them here behind a container would have cost this file
+the property that makes it worth running on every change: it finishes in well
+under a second, with nothing installed and nothing running.
+
+What is left is exactly the routes that read no session state.
 
 ### How they are implemented
 

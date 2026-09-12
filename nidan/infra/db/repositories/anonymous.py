@@ -38,6 +38,8 @@ import sqlalchemy as sa
 
 from nidan.infra.db.actor import AnonymousVisitor
 from nidan.infra.db.repositories.base import Repository, _transaction
+from nidan.infra.db.repositories.events import EventRepository
+from nidan.infra.db.repositories.feedback import FeedbackRepository
 
 _COLUMNS = """
     id, anonymous_id, case_version_id, sequence_index, status, confidence_pre,
@@ -45,18 +47,27 @@ _COLUMNS = """
 """
 
 
+def _visitor_id(actor: object) -> str:
+    """
+    The visitor's id, or a refusal.
+
+    Not an `assert`: python -O strips those, and this is the guard that keeps a
+    non-visitor actor away from queries whose only tenant filter is the value
+    it returns. Shared by both repositories in this module so they cannot
+    disagree about whose events belong to whose session.
+    """
+    if not isinstance(actor, AnonymousVisitor):
+        raise TypeError(
+            f"the trial repositories need an AnonymousVisitor, not "
+            f"{type(actor).__name__}")
+    return actor.anonymous_id
+
+
 class AnonymousSessionRepository(Repository):
     """Trial sessions, and nothing else."""
 
     def _aid(self) -> str:
-        # Not an `assert`: python -O strips those, and this one is the guard
-        # that keeps a non-visitor actor from reaching queries whose only
-        # tenant filter is the value it returns.
-        if not isinstance(self._actor, AnonymousVisitor):
-            raise TypeError(
-                f"the trial repository needs an AnonymousVisitor, not "
-                f"{type(self._actor).__name__}")
-        return self._actor.anonymous_id
+        return _visitor_id(self._actor)
 
     def _scoped(self, tail: str) -> sa.TextClause:
         """
@@ -106,6 +117,45 @@ class AnonymousSessionRepository(Repository):
             "WHERE anonymous_id = :anonymous_id AND id = :id"),
             {"anonymous_id": self._aid(), "id": session_id})
 
+    def complete(self, session_id: UUID) -> bool:
+        """As SessionRepository.complete, with the trial filter that RLS cannot give."""
+        result = self._conn.execute(sa.text("""
+            UPDATE sessions
+               SET status = 'completed',
+                   ended_at = now(),
+                   diagnosis_submitted_at = now(),
+                   last_activity_at = now()
+             WHERE anonymous_id = :anonymous_id AND id = :id
+               AND diagnosis_submitted_at IS NULL
+        """), {"anonymous_id": self._aid(), "id": session_id})
+        return result.rowcount == 1
+
+
+class AnonymousEventRepository(EventRepository):
+    """
+    The trial visitor's event log.
+
+    The only difference from `EventRepository` is that it cannot lean on RLS.
+    `own_session_events` resolves through `sessions.user_id = auth.uid()`,
+    which is NULL for a trial, and this scope runs as a bypassing role anyway
+    -- so without the predicate below, one visitor could append to and read
+    another's consultation by guessing a session id.
+    """
+
+    _OWNERSHIP = "AND s.anonymous_id = :anonymous_id"
+
+    def _ownership_params(self) -> dict[str, object]:
+        return {"anonymous_id": _visitor_id(self._actor)}
+
+
+class AnonymousFeedbackRepository(FeedbackRepository):
+    """Trial feedback. As with events, RLS cannot help here — see above."""
+
+    _OWNERSHIP = "AND s.anonymous_id = :anonymous_id"
+
+    def _ownership_params(self) -> dict[str, object]:
+        return {"anonymous_id": _visitor_id(self._actor)}
+
 
 class AnonymousRepositories:
     """Exactly what a trial visitor may touch: their sessions, and published cases."""
@@ -116,6 +166,8 @@ class AnonymousRepositories:
         self.conn = conn
         self.actor = actor
         self.sessions = AnonymousSessionRepository(conn, actor)
+        self.events = AnonymousEventRepository(conn, actor)
+        self.feedback = AnonymousFeedbackRepository(conn, actor)
         # Safe under a bypassing role because every query in CaseRepository
         # filters `status = 'published'` itself rather than trusting the policy.
         self.cases = CaseRepository(conn, actor)

@@ -1156,10 +1156,35 @@ CREATE POLICY own_session_results ON session_results
     SELECT 1 FROM sessions s
     WHERE s.id = session_results.session_id AND s.user_id = auth.uid()));
 
+-- Feedback inherits through its session, like session_results
+CREATE POLICY own_feedback_texts ON feedback_texts
+  FOR ALL USING (EXISTS (
+    SELECT 1 FROM sessions s
+    WHERE s.id = feedback_texts.session_id AND s.user_id = auth.uid()));
+
+-- Directly user-owned
+CREATE POLICY own_subscriptions ON subscriptions
+  FOR ALL USING (user_id = auth.uid());
+
+CREATE POLICY own_progress ON user_progress
+  FOR ALL USING (user_id = auth.uid());
+
+CREATE POLICY own_case_history ON user_case_history
+  FOR ALL USING (user_id = auth.uid());
+
 -- Published content is world-readable; only admins write
 CREATE POLICY read_published_cases ON case_versions
   FOR SELECT USING (status = 'published');
 ```
+
+**Enabling RLS without writing a policy denies everything.** The last four
+policies above were missing from this section until T-013, which meant
+`feedback_texts`, `subscriptions`, `user_progress` and `user_case_history` were
+not loosely protected but entirely unreachable by the application — every query
+returning nothing, with no error to explain it. Added by migration 021, and
+guarded as a property of the schema by
+`test_every_rls_enabled_table_has_at_least_one_policy` so a table added later
+cannot repeat it quietly.
 
 **Anonymous trial sessions bypass RLS by necessity** — there is no `auth.uid()`. They are served through a service-role connection with an explicit `anonymous_id` filter in the query, and that code path is short, isolated, and separately tested.
 

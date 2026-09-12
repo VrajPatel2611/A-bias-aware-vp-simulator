@@ -11,10 +11,12 @@ It will be replaced by reconstruction from an append-only event log (ADR-0003).
 The function signatures are kept stable so that change is contained.
 """
 
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
 from nidan.domain.assessment.topics import extract_topics
+from nidan.domain.events import Event
 from nidan.domain.types import Case, Session
 
 
@@ -59,6 +61,29 @@ def record_investigation(session: Session, investigation_key: str) -> Session:
     return session
 
 
+# Phrases that mark a learner committing to a diagnosis mid-consultation. Not a
+# judgement on its own — anchoring is about what they asked afterwards.
+EARLY_DIAGNOSIS_PHRASES: tuple[str, ...] = (
+    "i think it is", "i think this is", "this looks like",
+    "probably ", "could be ", "i believe", "my diagnosis",
+    "seems like", "this is a case of", "i suspect",
+    "it is likely", "most likely",
+)
+
+
+def mentions_early_diagnosis(user_message: str) -> bool:
+    """
+    Whether this message commits to a diagnosis.
+
+    Split out of `update_session` in T-013 so the event writer can ask the same
+    question before appending an `early_diagnosis` event. One phrase list, so
+    a session replayed from events and a session built in memory cannot
+    disagree about what counts.
+    """
+    lowered = user_message.lower()
+    return any(phrase in lowered for phrase in EARLY_DIAGNOSIS_PHRASES)
+
+
 def update_session(session: Session, user_message: str) -> Session:
     """
     Updates session after every user message.
@@ -86,18 +111,8 @@ def update_session(session: Session, user_message: str) -> Session:
             session["topics_covered"].append(topic)
 
     # Step 5: check for early diagnosis mention
-    early_diagnosis_phrases = [
-        "i think it is", "i think this is", "this looks like",
-        "probably ", "could be ", "i believe", "my diagnosis",
-        "seems like", "this is a case of", "i suspect",
-        "it is likely", "most likely",
-    ]
-    message_lower = user_message.lower()
-    if session["early_diagnosis"] is None:
-        for phrase in early_diagnosis_phrases:
-            if phrase in message_lower:
-                session["early_diagnosis"] = user_message
-                break
+    if session["early_diagnosis"] is None and mentions_early_diagnosis(user_message):
+        session["early_diagnosis"] = user_message
 
     return session
 
@@ -146,3 +161,80 @@ def get_session_summary(session: Session, case_config: Case) -> dict[str, Any]:
         "diagnosis_given": session["diagnosis_submitted"],
         "time_taken_seconds": time_taken,
     }
+
+
+# ── replay (BUILD_PLAN T-013, ADR-0003) ──────────────────────────────
+
+def replay(events: Iterable[Event], *, case_id: str, started_at: str) -> Session:
+    """
+    Rebuild session state from the append-only event log.
+
+    Returns exactly the shape `create_session` produces, so the assessment
+    engine, the feedback builder and the templates are unaffected by where the
+    state came from. That was the promise this module made in T-001 when it
+    said the signatures were kept stable so the change would be contained.
+
+    **A pure fold. Nothing is re-derived.** Topics come from
+    `patient_reply.matched_topics` rather than from re-running `extract_topics`
+    over the questions, and an early diagnosis comes from its own event rather
+    than from re-scanning the text. `DATA_MODEL` §8.2 is explicit about why:
+    those payloads record *what the system understood at the time*, under the
+    engine version then current. Recomputing them here would make a replay
+    agree with today's code by construction, and destroy the drift signal that
+    recomputation exists to detect (T-016).
+
+    `case_id` and `started_at` come from the `sessions` row, which is the only
+    state a consultation keeps outside the log.
+    """
+    session = create_session(case_id, started_at=started_at)
+
+    for event in events:
+        payload = event.payload
+
+        if event.type == "question":
+            session["question_count"] += 1
+            session["questions_asked"].append(payload["text"])
+
+        elif event.type == "patient_reply":
+            for topic in payload.get("matched_topics", []):
+                if topic not in session["topics_covered"]:
+                    session["topics_covered"].append(topic)
+
+        elif event.type == "examination":
+            record_exam(session, payload["key"])
+
+        elif event.type == "investigation":
+            record_investigation(session, payload["key"])
+
+        elif event.type == "early_diagnosis":
+            # First one wins, matching update_session: the point is what they
+            # committed to first, not what they revised it to.
+            if session["early_diagnosis"] is None:
+                session["early_diagnosis"] = payload["text"]
+
+        elif event.type == "diagnosis":
+            session["diagnosis_submitted"] = payload["text"]
+            if event.created_at is not None:
+                session["end_time"] = event.created_at.isoformat()
+
+        # feedback_viewed and input_blocked change no state by design. The
+        # first is analytics; the second deliberately records that something
+        # was refused without recording what it was.
+
+    return session
+
+
+def conversation_from(events: Iterable[Event]) -> list[dict[str, str]]:
+    """
+    Rebuild the chat transcript for the next LLM call.
+
+    Roles are "user"/"model" because that is what the templates and the
+    existing gateway mapping expect.
+    """
+    conversation: list[dict[str, str]] = []
+    for event in events:
+        if event.type == "question":
+            conversation.append({"role": "user", "content": event.payload["text"]})
+        elif event.type == "patient_reply":
+            conversation.append({"role": "model", "content": event.payload["text"]})
+    return conversation

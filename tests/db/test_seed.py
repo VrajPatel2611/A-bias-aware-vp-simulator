@@ -205,3 +205,20 @@ class TestSeededCases:
                 UPDATE case_versions SET status = 'published', published_at = now()
                 WHERE id = :id
             """), {"id": version_id})
+
+
+def test_the_seeded_slugs_are_exactly_the_ones_cases_py_declares(db):
+    """
+    `CASE_SLUGS` moved from scripts/generate_case_migration.py into
+    domain/content/cases.py in T-013, because the application needs it at
+    runtime to resolve a consultation to its `case_versions` row.
+
+    Moving it rather than copying it is the point, and this is the test that
+    keeps it a move. Two copies of a slug map would drift the first time a case
+    was renamed, and the symptom would be a consultation that cannot find its
+    case — reported as "the app is broken", nowhere near the cause.
+    """
+    from nidan.domain.content.cases import CASE_SLUGS
+
+    seeded = set(db.execute(sa.text("SELECT slug FROM cases")).scalars())
+    assert seeded == set(CASE_SLUGS.values())

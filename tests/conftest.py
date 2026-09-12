@@ -7,7 +7,12 @@ that *no test makes a network call*, and a guarantee that depends on each test
 author remembering to opt in is not a guarantee.
 """
 
+import os
+import subprocess
+import sys
+
 import pytest
+import sqlalchemy as sa
 
 from nidan.domain.content.cases import get_case
 from nidan.domain.session import create_session
@@ -17,6 +22,72 @@ from tests.fakes.llm import FakeLLM
 # that accidentally depends on wall-clock time fails consistently rather than
 # once a year at midnight.
 FIXED_START = "2026-01-01T09:00:00+00:00"
+
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+# ── the database ─────────────────────────────────────────────────────
+#
+# These moved up from tests/db/conftest.py in T-013. Session state is no longer
+# a dictionary in memory, so the consultation routes need a real database too —
+# not only the schema tests. One container serves both.
+
+@pytest.fixture(scope="session")
+def pg_url() -> str:
+    """A migrated database. Skips rather than fails when Docker is unavailable."""
+    try:
+        # The community path is the current one; the old location still works
+        # but warns. Try both so the suite is quiet on either version.
+        try:
+            from testcontainers.community.postgres import PostgresContainer
+        except ImportError:
+            from testcontainers.postgres import PostgresContainer
+    except ImportError:                                   # pragma: no cover
+        pytest.skip("testcontainers not installed")
+
+    try:
+        container = PostgresContainer("pgvector/pgvector:pg16", driver="psycopg")
+        container.start()
+    except Exception as e:                                # pragma: no cover
+        pytest.skip(f"Docker unavailable: {e}")
+
+    url = container.get_connection_url()
+    # sys.executable -m alembic, not bare "alembic": pytest may be running
+    # without an activated venv, and then the console script is not on PATH.
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=REPO, capture_output=True, text=True,
+        env=dict(os.environ, ALEMBIC_DATABASE_URL=url),
+    )
+    if result.returncode != 0:
+        container.stop()
+        pytest.fail(f"migrations failed:\n{result.stdout}\n{result.stderr}")
+
+    yield url
+    container.stop()
+
+
+@pytest.fixture(scope="session")
+def seeded_case_slugs(pg_url) -> list:
+    """
+    The slugs of the cases created by migration 019.
+
+    SLUGS, not ids. Ids are generated fresh every time the migration runs, and
+    `test_downgrade_to_base_then_upgrade_again` rebuilds the whole schema
+    mid-session — after which a session-scoped list of ids refers to rows that
+    no longer exist, and the teardown deletes all five seeded cases as
+    "not seeded". Slugs are deterministic, so they survive the rebuild.
+
+    Captured rather than hard-coded so it keeps working when cases 6-10 are
+    authored.
+    """
+    engine = sa.create_engine(pg_url)
+    with engine.connect() as conn:
+        slugs = list(conn.execute(sa.text("SELECT slug FROM cases")).scalars())
+    engine.dispose()
+    return slugs
+
 
 
 # ── the network guard ────────────────────────────────────────────────
@@ -99,3 +170,34 @@ def session_factory():
             "end_time": end,
         }
     return _make
+
+
+# ── routes that need the database (T-013) ────────────────────────────
+
+@pytest.fixture
+def live_db(pg_url, seeded_case_slugs, monkeypatch):
+    """
+    Point the application's engine at the test container, for tests that drive
+    HTTP routes.
+
+    Before T-013 the consultation routes needed nothing but memory, so they were
+    smoke tests costing 0.15 s. Now every one of them replays an event log, and
+    a test that avoided the database would be testing a code path that no longer
+    exists. `tests/db/test_routes.py` holds those tests; this fixture is what
+    they run against.
+    """
+    from nidan.config import settings
+    from nidan.infra.db import engine as engine_mod
+
+    monkeypatch.setattr(settings, "DATABASE_URL", pg_url)
+    engine_mod.dispose_engine()
+
+    admin = sa.create_engine(pg_url)
+    yield admin
+
+    engine_mod.dispose_engine()
+    with admin.begin() as c:
+        c.exec_driver_sql(
+            "TRUNCATE session_events, session_results, feedback_texts, "
+            "llm_calls, leakage_flags, sessions")
+    admin.dispose()

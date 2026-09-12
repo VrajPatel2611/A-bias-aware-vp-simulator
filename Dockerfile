@@ -52,14 +52,19 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request,sys; \
 sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).status==200 else 1)"
 
-# --workers 1 is NOT a performance choice. Session state is a dict in process
-# memory (infra/session_store.py, blocker B1), so a second worker would serve
-# requests that cannot see the session.
+# 2 workers x 4 threads, per TECH_SPEC §9.1.
 #
-# TECH_SPEC §9.1 specifies 2 workers x 4 threads. That describes the system
-# AFTER T-013 moves session state into an event log — the spec says so itself:
-# "multiple workers are only safe because session state left process memory".
-# Raise this in T-013, not before.
+# This line was --workers 1 until T-013, and not as a performance choice:
+# session state was a dict in process memory (the old infra/session_store.py,
+# blocker B1), so a second worker would have served requests that could not see
+# the session. The spec was explicit that "multiple workers are only safe
+# because session state left process memory".
+#
+# It has now left. Every handler replays an append-only event log and holds
+# nothing between requests (ADR-0003), so a request may be served by any worker
+# — or by a process that did not exist when the consultation started.
+# tests/db/test_routes.py proves both halves: a consultation survives the
+# process being disposed, and two clients cannot see each other.
 # NO --access-logfile. Gunicorn's access log is plain text, so it breaks the
 # "JSON logs to stdout" contract (TECH_SPEC §10), duplicates the app's own
 # request log, and re-adds the /healthz probe every 30s that the app-level
@@ -68,5 +73,5 @@ sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)
 #
 # --error-logfile is kept: gunicorn's own failures (worker crash, bind refused)
 # happen outside Flask and would otherwise be invisible.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", \
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", \
      "--error-logfile", "-", "nidan.app:app"]

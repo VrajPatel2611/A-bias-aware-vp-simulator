@@ -15,70 +15,12 @@ from __future__ import annotations
 
 import hashlib
 import os
-import subprocess
-import sys
 import uuid
 
 import pytest
 import sqlalchemy as sa
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-
-@pytest.fixture(scope="session")
-def pg_url() -> str:
-    """A migrated database. Skips rather than fails when Docker is unavailable."""
-    try:
-        # The community path is the current one; the old location still works
-        # but warns. Try both so the suite is quiet on either version.
-        try:
-            from testcontainers.community.postgres import PostgresContainer
-        except ImportError:
-            from testcontainers.postgres import PostgresContainer
-    except ImportError:                                   # pragma: no cover
-        pytest.skip("testcontainers not installed")
-
-    try:
-        container = PostgresContainer("pgvector/pgvector:pg16", driver="psycopg")
-        container.start()
-    except Exception as e:                                # pragma: no cover
-        pytest.skip(f"Docker unavailable: {e}")
-
-    url = container.get_connection_url()
-    # sys.executable -m alembic, not bare "alembic": pytest may be running
-    # without an activated venv, and then the console script is not on PATH.
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        cwd=REPO, capture_output=True, text=True,
-        env=dict(os.environ, ALEMBIC_DATABASE_URL=url),
-    )
-    if result.returncode != 0:
-        container.stop()
-        pytest.fail(f"migrations failed:\n{result.stdout}\n{result.stderr}")
-
-    yield url
-    container.stop()
-
-
-@pytest.fixture(scope="session")
-def seeded_case_slugs(pg_url) -> list:
-    """
-    The slugs of the cases created by migration 019.
-
-    SLUGS, not ids. Ids are generated fresh every time the migration runs, and
-    `test_downgrade_to_base_then_upgrade_again` rebuilds the whole schema
-    mid-session — after which a session-scoped list of ids refers to rows that
-    no longer exist, and the teardown deletes all five seeded cases as
-    "not seeded". Slugs are deterministic, so they survive the rebuild.
-
-    Captured rather than hard-coded so it keeps working when cases 6-10 are
-    authored.
-    """
-    engine = sa.create_engine(pg_url)
-    with engine.connect() as conn:
-        slugs = list(conn.execute(sa.text("SELECT slug FROM cases")).scalars())
-    engine.dispose()
-    return slugs
 
 
 # Tables holding only test rows, safe to truncate wholesale.

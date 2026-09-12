@@ -15,6 +15,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import logging
+import os
 import sys
 from typing import Any
 
@@ -28,6 +29,9 @@ _STANDARD = frozenset(vars(logging.LogRecord("", 0, "", 0, "", (), None)))| {
 }
 
 
+_PID = os.getpid()
+
+
 class JsonFormatter(logging.Formatter):
     """Render a LogRecord as one JSON object."""
 
@@ -37,6 +41,12 @@ class JsonFormatter(logging.Formatter):
                 record.created, tz=_dt.UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
+            # Which gunicorn worker served this. Added in T-013, when the app
+            # stopped being limited to one: with several workers, "did this
+            # request see the same state as the last one" is the first question
+            # an incident asks, and without a pid the log cannot answer it.
+            # Constant per process, so it costs one attribute lookup.
+            "pid": _PID,
             "msg": scrub(record.getMessage()),
         }
 
